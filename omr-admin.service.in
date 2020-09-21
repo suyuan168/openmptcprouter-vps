@@ -1,12 +1,11 @@
 [Unit]
-Description=Glorytun TCP on %I
+Description=OMR-Admin
 After=network.target network-online.target
 
 [Service]
 Type=simple
 Restart=always
-ExecStart=/usr/local/bin/glorytun-tcp-run /etc/glorytun-tcp/%i
-ExecStartPost=-/etc/glorytun-tcp/post.sh /etc/glorytun-tcp/%i
+ExecStart=/usr/local/bin/omr-admin.py
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
 
 [Install]

@@ -1,4 +1,13 @@
 #!/bin/sh
+if [ -f /etc/os-release ]; then
+	. /etc/os-release
+else
+	. /usr/lib/os-release
+fi
+if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "9" ]; then
+        echo "This script doesn't work with Debian Stretch (9.x)"
+        exit 1
+fi
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo "You can select any interface and set any IPs during Pi-hole configuration, this will be modified for OpenMPTCProuter at the end."
 echo "Don't apply Pi-hole firewall rules."
@@ -14,6 +23,7 @@ cat > /etc/lighttpd/external.conf << 'EOF'
 server.bind="10.255.255.1"
 $SERVER["socket"] == "10.255.254.1:80" { }
 $SERVER["socket"] == "10.255.252.1:80" { }
+$SERVER["socket"] == "10.255.251.1:80" { }
 $SERVER["socket"] == "10.255.253.1:80" { }
 EOF
 systemctl -q restart lighttpd
@@ -32,6 +42,7 @@ interface=gt-tun0
 interface=gt-udp-tun0
 interface=tun0
 interface=mlvpn0
+interface=dsvpn0
 EOF
 systemctl -q restart pihole-FTL
 echo "Done"
