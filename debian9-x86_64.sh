@@ -5,7 +5,12 @@
 # This is free software, licensed under the GNU General Public License v3 or later.
 # See /LICENSE for more information.
 #
-
+echo '===================================================================================='
+echo '本脚本由蚂蚁聚合路由器出品。仅供DIY爱好者免费学习使用。请勿用于商业。'
+echo '如果用于商业请选择蚂蚁聚合商业版，openmptcprouter合作伙伴请访问官网http://55860.com'
+echo '5秒后自动开始安装'
+echo '===================================================================================='
+sleep 5
 UPSTREAM=${UPSTREAM:-no}
 UPSTREAM6=${UPSTREAM6:-no}
 SHADOWSOCKS_PASS=${SHADOWSOCKS_PASS:-$(head -c 32 /dev/urandom | base64 -w0)}
@@ -1183,7 +1188,7 @@ if [ "$DSVPN" = "yes" ]; then
 		git clone https://hub.55860.com/jedisct1/dsvpn.git /tmp/dsvpn
 		cd /tmp/dsvpn
 		git checkout ${DSVPN_VERSION}
-		wget https://hub.55860.com/Ysurac/openmptcprouter-feeds/raw/develop/dsvpn/patches/nofirewall.patch
+		wget https://hub.55860.com/Ysurac/openmptcprouter-feeds/raw/956d791ea49d63e3e5b18cac510b53987c3f1a36/dsvpn/patches/nofirewall.patch
 		patch -p1 < nofirewall.patch
 		make CFLAGS='-DNO_DEFAULT_ROUTES -DNO_DEFAULT_FIREWALL'
 		make install
