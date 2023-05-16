@@ -70,7 +70,7 @@ OMR_ADMIN_VERSION="4f8dc4f997c6c95971beea9d52512ed91c77479b"
 OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
-V2RAY_VERSION="4.43.0"
+V2RAY_VERSION="5.4.1"
 V2RAY_PLUGIN_VERSION="4.43.0"
 EASYRSA_VERSION="3.0.6"
 SHADOWSOCKS_VERSION="master"
@@ -83,11 +83,11 @@ DEFAULT_USER="openmptcprouter"
 VPS_DOMAIN=${VPS_DOMAIN:-$(wget -4 -qO- -T 2 http://hostname.openmptcprouter.com)}
 VPSPATH="server"
 VPS_PUBLIC_IP=${VPS_PUBLIC_IP:-$(wget -4 -qO- -T 2 http://ip.openmptcprouter.com)}
-VPSURL="https://www.55860.com/bak/"
-REPO="repo.55860.com"
+VPSURL="https://www.openmptcprouter.com/"
+REPO="repo.openmptcprouter.com"
 CHINA=${CHINA:-no}
 
-OMR_VERSION="1032-5G"
+OMR_VERSION="1033-5G"
 
 DIR=$( pwd )
 #"
@@ -171,7 +171,7 @@ fi
 # Force update key
 [ -f /etc/apt/sources.list.d/openmptcprouter.list ] && {
 	echo "Update OpenMPTCProuter repo key"
-	wget -O - http://repo.55860.com/openmptcprouter.gpg.key | apt-key add -
+	wget -O - http://repo.openmptcprouter.com/openmptcprouter.gpg.key | apt-key add -
 }
 
 CURRENT_OMR="$(grep -s 'OpenMPTCProuter VPS' /etc/* | awk '{print $4}')"
@@ -1185,11 +1185,9 @@ if [ "$DSVPN" = "yes" ]; then
 		apt-get install -y --no-install-recommends build-essential git ca-certificates
 		rm -rf /tmp/dsvpn
 		cd /tmp
-		git clone https://hub.55860.com/jedisct1/dsvpn.git /tmp/dsvpn
+		git clone https://hub.55860.com/ysurac/dsvpn.git /tmp/dsvpn
 		cd /tmp/dsvpn
 		git checkout ${DSVPN_VERSION}
-		wget https://hub.55860.com/Ysurac/openmptcprouter-feeds/raw/956d791ea49d63e3e5b18cac510b53987c3f1a36/dsvpn/patches/nofirewall.patch
-		patch -p1 < nofirewall.patch
 		make CFLAGS='-DNO_DEFAULT_ROUTES -DNO_DEFAULT_FIREWALL'
 		make install
 		rm -f /lib/systemd/system/dsvpn/*
