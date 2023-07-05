@@ -52,7 +52,7 @@ if [ "$UPSTREAM6" = "yes" ]; then
 	KERNEL_PACKAGE_VERSION="1.30"
 	KERNEL_RELEASE="${KERNEL_VERSION}-mptcp_${KERNEL_PACKAGE_VERSION}"
 fi
-GLORYTUN_UDP_VERSION="32267e86a6da05b285bb3bf2b136c105dc0af4bb"
+GLORYTUN_UDP_VERSION="master"
 GLORYTUN_UDP_BINARY_VERSION="0.3.4-5"
 GLORYTUN_TCP_BINARY_VERSION="0.0.35-3"
 #MLVPN_VERSION="8f9720978b28c1954f9f229525333547283316d2"
@@ -1192,7 +1192,7 @@ if [ "$SOURCES" = "yes" ]; then
 	apt-get install -y --no-install-recommends build-essential git ca-certificates meson pkg-config
 	rm -rf /tmp/glorytun-udp
 	cd /tmp
-	git clone https://hub.55860.com/angt/glorytun.git /tmp/glorytun-udp
+	git clone https://hub.55860.com/suyuan168/glorytun.git /tmp/glorytun-udp
 	cd /tmp/glorytun-udp
 	git checkout ${GLORYTUN_UDP_VERSION}
 	git submodule update --init --recursive
