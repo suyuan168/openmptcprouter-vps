@@ -68,7 +68,7 @@ DSVPN_BINARY_VERSION="0.1.4-2"
 V2RAY_VERSION="5.4.1"
 V2RAY_PLUGIN_VERSION="4.43.0"
 EASYRSA_VERSION="3.0.6"
-SHADOWSOCKS_VERSION="7407b214f335f0e2068a8622ef3674d868218e17"
+SHADOWSOCKS_VERSION="master"
 if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
 	SHADOWSOCKS_VERSION="8fc18fcba3226e31f9f2bb9e60d6be6a1837862b"
 fi
@@ -450,7 +450,7 @@ if [ "$SOURCES" = "yes" ]; then
 	#wget -O /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz http://hub.55860.com/shadowsocks/shadowsocks-libev/releases/download/v${SHADOWSOCKS_VERSION}/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz
 	cd /tmp
 	rm -rf shadowsocks-libev
-	git clone https://hub.55860.com/Ysurac/shadowsocks-libev.git
+	git clone https://hub.55860.com/suyuan168/shadowsocks-libev.git
 	cd shadowsocks-libev
 	git checkout ${SHADOWSOCKS_VERSION}
 	git submodule update --init --recursive
