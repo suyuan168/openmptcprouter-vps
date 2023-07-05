@@ -59,7 +59,7 @@ GLORYTUN_TCP_BINARY_VERSION="0.0.35-3"
 MLVPN_VERSION="8aa1b16d843ea68734e2520e39a34cb7f3d61b2b"
 MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="f9fb6aa0a65e8e20950977bda970c90012f830d7"
-OBFS_VERSION="486bebd9208539058e57e23a12f23103016e09b4"
+OBFS_VERSION="602d6c5d648e9df26060db945e0bac18ca49725c"
 OBFS_BINARY_VERSION="0.0.5-1"
 OMR_ADMIN_VERSION="4f8dc4f997c6c95971beea9d52512ed91c77479b"
 OMR_ADMIN_BINARY_VERSION="0.3+20220827"
@@ -794,7 +794,7 @@ if [ "$OBFS" = "yes" ]; then
 		else
 			apt-get install -y --no-install-recommends build-essential autoconf libtool libssl-dev libpcre3-dev libev-dev asciidoc xmlto automake git ca-certificates
 		fi
-		git clone https://hub.55860.com/shadowsocks/simple-obfs.git /tmp/simple-obfs
+		git clone https://hub.55860.com/suyuan168/simple-obfs.git /tmp/simple-obfs
 		cd /tmp/simple-obfs
 		git checkout ${OBFS_VERSION}
 		git submodule update --init --recursive
