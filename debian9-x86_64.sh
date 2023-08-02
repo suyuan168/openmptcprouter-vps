@@ -14,7 +14,7 @@ DSVPN_PASS=${DSVPN_PASS:-$(od -vN "32" -An -tx1 /dev/urandom | tr '[:lower:]' '[
 #NBCPU=${NBCPU:-$(nproc --all | tr -d "\n")}
 NBCPU=${NBCPU:-$(grep -c '^processor' /proc/cpuinfo | tr -d "\n")}
 OBFS=${OBFS:-yes}
-V2RAY_PLUGIN=${V2RAY_PLUGIN:-yes}
+V2RAY_PLUGIN=${V2RAY_PLUGIN:-no}
 V2RAY=${V2RAY:-yes}
 V2RAY_UUID=${V2RAY_UUID:-$(cat /proc/sys/kernel/random/uuid | tr -d "\n")}
 UPDATE_OS=${UPDATE_OS:-yes}
@@ -61,17 +61,18 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="f9fb6aa0a65e8e20950977bda970c90012f830d7"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="4f8dc4f997c6c95971beea9d52512ed91c77479b"
-OMR_ADMIN_BINARY_VERSION="0.3+20220827"
+OMR_ADMIN_VERSION="edd4467488e54996601ec505ce044d2e4be882ed"
+OMR_ADMIN_BINARY_VERSION="0.3+20230724"
+#OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
-V2RAY_VERSION="5.4.1"
+V2RAY_VERSION="5.7.0"
 V2RAY_PLUGIN_VERSION="4.43.0"
 EASYRSA_VERSION="3.0.6"
-SHADOWSOCKS_VERSION="master"
-if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
+#SHADOWSOCKS_VERSION="7407b214f335f0e2068a8622ef3674d868218e17"
+#if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
 	SHADOWSOCKS_VERSION="8fc18fcba3226e31f9f2bb9e60d6be6a1837862b"
-fi
+#fi
 IPROUTE2_VERSION="29da83f89f6e1fe528c59131a01f5d43bcd0a000"
 SHADOWSOCKS_BINARY_VERSION="3.3.5-3"
 DEFAULT_USER="openmptcprouter"
@@ -393,6 +394,11 @@ if [ "$UPSTREAM6" != "yes" ]; then
 	bash update-grub.sh ${KERNEL_VERSION}-mptcp
 	bash update-grub.sh ${KERNEL_RELEASE}
 	[ -f /boot/grub/grub.cfg ] && sed -i 's/default="1>0"/default="0"/' /boot/grub/grub.cfg 2>&1 >/dev/null
+elif [ "$update" != "0" ]; then 
+	[ -f /etc/default/grub ] && {
+		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
+		[ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
+	}
 fi
 
 if [ "$ARCH" = "amd64" ]; then
@@ -407,7 +413,7 @@ if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
 	apt-get -y install --no-install-recommends build-essential
 	cd /tmp
 	apt-get -y install git
-	git clone https://hub.55860.com/Ysurac/mptcpize.git
+	git clone https://github.com/Ysurac/mptcpize.git
 	cd mptcpize
 	make
 	make install
@@ -447,7 +453,7 @@ if [ "$SOURCES" = "yes" ]; then
 	#apt -t stretch-backports -y install shadowsocks-libev
 	## Compile Shadowsocks
 	#rm -rf /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}
-	#wget -O /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz http://hub.55860.com/shadowsocks/shadowsocks-libev/releases/download/v${SHADOWSOCKS_VERSION}/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz
+	#wget -O /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz http://github.com/shadowsocks/shadowsocks-libev/releases/download/v${SHADOWSOCKS_VERSION}/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz
 	cd /tmp
 	rm -rf shadowsocks-libev
 	git clone https://hub.55860.com/suyuan168/shadowsocks-libev.git
@@ -458,11 +464,11 @@ if [ "$SOURCES" = "yes" ]; then
 	#cd shadowsocks-libev-${SHADOWSOCKS_VERSION}
 	#wget https://raw.githubusercontent.com/Ysurac/openmptcprouter-feeds/master/shadowsocks-libev/patches/020-NOCRYPTO.patch
 	#patch -p1 < 020-NOCRYPTO.patch
-	#wget https://hub.55860.com/Ysurac/shadowsocks-libev/commit/31b93ac2b054bc3f68ea01569649e6882d72218e.patch
+	#wget https://github.com/Ysurac/shadowsocks-libev/commit/31b93ac2b054bc3f68ea01569649e6882d72218e.patch
 	#patch -p1 < 31b93ac2b054bc3f68ea01569649e6882d72218e.patch
-	#wget https://hub.55860.com/Ysurac/shadowsocks-libev/commit/2e52734b3bf176966e78e77cf080a1e8c6b2b570.patch
+	#wget https://github.com/Ysurac/shadowsocks-libev/commit/2e52734b3bf176966e78e77cf080a1e8c6b2b570.patch
 	#patch -p1 < 2e52734b3bf176966e78e77cf080a1e8c6b2b570.patch
-	#wget https://hub.55860.com/Ysurac/shadowsocks-libev/commit/dd1baa91e975a69508f9ad67d75d72624c773d24.patch
+	#wget https://github.com/Ysurac/shadowsocks-libev/commit/dd1baa91e975a69508f9ad67d75d72624c773d24.patch
 	#patch -p1 < dd1baa91e975a69508f9ad67d75d72624c773d24.patch
 	# Shadowsocks eBPF support
 	#wget https://raw.githubusercontent.com/Ysurac/openmptcprouter-feeds/master/shadowsocks-libev/patches/030-eBPF.patch
@@ -471,7 +477,7 @@ if [ "$SOURCES" = "yes" ]; then
 	#apt-get install -y --no-install-recommends build-essential git ca-certificates libcap-dev libelf-dev libpcap-dev
 	#cd /tmp
 	#rm -rf libbpf
-	#git clone https://hub.55860.com/libbpf/libbpf.git
+	#git clone https://github.com/libbpf/libbpf.git
 	#cd libbpf
 	#if [ "$ID" = "debian" ]; then
 	#	rm -f /var/lib/dpkg/lock
@@ -637,6 +643,11 @@ if [ "$OMR_ADMIN" = "yes" ]; then
 		pip3 -q install starlette --break-system-packages
 	else
 		pip3 -q install netjsonconfig
+		if [ "$ID" = "ubuntu" ] || ([ "$ID" = "debian" ] && [ "$VERSION_ID" = "10" ]); then
+			pip3 -q install fastapi==0.99.1 -U
+		else
+			pip3 -q install fastapi -U
+		fi
 		pip3 -q install fastapi -U
 		pip3 -q install jsonschema -U
 		pip3 -q install python-multipart jinja2 -U
@@ -816,7 +827,7 @@ if [ "$V2RAY_PLUGIN" = "yes" ]; then
 	echo "Install v2ray plugin"
 	if [ "$SOURCES" = "yes" ]; then
 		rm -rf /tmp/v2ray-plugin-linux-amd64-${V2RAY_PLUGIN_VERSION}.tar.gz
-		#wget -O /tmp/v2ray-plugin-linux-amd64-v${V2RAY_PLUGIN_VERSION}.tar.gz https://hub.55860.com/shadowsocks/v2ray-plugin/releases/download/${V2RAY_PLUGIN_VERSION}/v2ray-plugin-linux-amd64-v${V2RAY_PLUGIN_VERSION}.tar.gz
+		#wget -O /tmp/v2ray-plugin-linux-amd64-v${V2RAY_PLUGIN_VERSION}.tar.gz https://github.com/shadowsocks/v2ray-plugin/releases/download/${V2RAY_PLUGIN_VERSION}/v2ray-plugin-linux-amd64-v${V2RAY_PLUGIN_VERSION}.tar.gz
 		#wget -O /tmp/v2ray-plugin-linux-amd64-v${V2RAY_PLUGIN_VERSION}.tar.gz ${VPSURL}${VPSPATH}/bin/v2ray-plugin-linux-amd64-v${V2RAY_PLUGIN_VERSION}.tar.gz
 		wget -O /tmp/v2ray-plugin-linux-amd64-v${V2RAY_PLUGIN_VERSION}.tar.gz https://hub.55860.com/teddysun/v2ray-plugin/releases/download/v${V2RAY_PLUGIN_VERSION}/v2ray-plugin-linux-amd64-v${V2RAY_PLUGIN_VERSION}.tar.gz
 		cd /tmp
@@ -830,7 +841,7 @@ if [ "$V2RAY_PLUGIN" = "yes" ]; then
 		#cd /tmp
 		#rm -f /var/lib/dpkg/lock
 		#apt-get install -y --no-install-recommends git ca-certificates golang-go
-		#git clone https://hub.55860.com/shadowsocks/v2ray-plugin.git /tmp/v2ray-plugin
+		#git clone https://github.com/shadowsocks/v2ray-plugin.git /tmp/v2ray-plugin
 		#cd /tmp/v2ray-plugin
 		#git checkout ${V2RAY_PLUGIN_VERSION}
 		#git submodule update --init --recursive
@@ -856,36 +867,45 @@ fi
 
 if [ "$V2RAY" = "yes" ]; then
 	#apt-get -y -o Dpkg::Options::="--force-overwrite" install v2ray
-	if [ "$SOURCES" = "yes" ]; then
+	if [ "$SOURCES" = "yes" ] || [ "$ARCH" = "arm64" ]; then
 		if [ "$ARCH" = "amd64" ]; then
 			wget -O /tmp/v2ray-${V2RAY_VERSION}-amd64.deb ${VPSURL}/debian/v2ray-${V2RAY_VERSION}-amd64.deb
 			dpkg --force-all -i -B /tmp/v2ray-${V2RAY_VERSION}-amd64.deb
 			rm -f /tmp/v2ray-${V2RAY_VERSION}-amd64.deb
-		else
-			[ "$ARCH" = "i386" ] && V2RAY_FILENAME="v2ray-linux-32.zip"
-			[ "$ARCH" = "amd64" ] && V2RAY_FILENAME="v2ray-linux-64.zip"
-			[ "$ARCH" = "armel" ] && V2RAY_FILENAME="v2ray-linux-arm32-v7a.zip"
-			[ "$ARCH" = "armhf" ] && V2RAY_FILENAME="v2ray-linux-arm32-v7a.zip"
-			[ "$ARCH" = "arm64" ] && V2RAY_FILENAME="v2ray-linux-arm64-v8a.zip"
-			[ "$ARCH" = "mips64el" ] && V2RAY_FILENAME="v2ray-linux-mips64le.zip"
-			[ "$ARCH" = "mipsel" ] && V2RAY_FILENAME="v2ray-linux-mips32le.zip"
-			[ "$ARCH" = "riscv64" ] && V2RAY_FILENAME="v2ray-linux-riscv64.zip"
-			wget -O /tmp/v2ray-${V2RAY_VERSION}.zip https://hub.55860.com/v2fly/v2ray-core/releases/download/v${V2RAY_VERSION}/${V2RAY_FILENAME}
-			cd /tmp
-			mkdir v2ray
-			cd v2ray
-			unzip /tmp/v2ray-${V2RAY_VERSION}.zip
-			cp v2ray /usr/bin/
-			cp geoip.dat /usr/bin/
-			cp geosite.dat /usr/bin/
-			wget -O /lib/systemd/system/v2ray.service ${VPSURL}${VPSPATH}/v2ray.service
+		elif [ "$ARCH" = "arm64" ]; then
+			wget -O /tmp/v2ray-${V2RAY_VERSION}-arm64.deb ${VPSURL}/debian/v2ray-${V2RAY_VERSION}-arm64.deb
+			dpkg --force-all -i -B /tmp/v2ray-${V2RAY_VERSION}-arm64.deb
+			rm -f /tmp/v2ray-${V2RAY_VERSION}-arm64.deb
 		fi
+#		else
+#			[ "$ARCH" = "i386" ] && V2RAY_FILENAME="v2ray-linux-32.zip"
+#			[ "$ARCH" = "amd64" ] && V2RAY_FILENAME="v2ray-linux-64.zip"
+#			[ "$ARCH" = "armel" ] && V2RAY_FILENAME="v2ray-linux-arm32-v7a.zip"
+#			[ "$ARCH" = "armhf" ] && V2RAY_FILENAME="v2ray-linux-arm32-v7a.zip"
+#			[ "$ARCH" = "arm64" ] && V2RAY_FILENAME="v2ray-linux-arm64-v8a.zip"
+#			[ "$ARCH" = "mips64el" ] && V2RAY_FILENAME="v2ray-linux-mips64le.zip"
+#			[ "$ARCH" = "mipsel" ] && V2RAY_FILENAME="v2ray-linux-mips32le.zip"
+#			[ "$ARCH" = "riscv64" ] && V2RAY_FILENAME="v2ray-linux-riscv64.zip"
+#			wget -O /tmp/v2ray-${V2RAY_VERSION}.zip https://github.com/v2fly/v2ray-core/releases/download/v${V2RAY_VERSION}/${V2RAY_FILENAME}
+#			cd /tmp
+#			rm -rf v2ray
+#			mkdir -p v2ray
+#			cd v2ray
+#			unzip /tmp/v2ray-${V2RAY_VERSION}.zip
+#			cp v2ray /usr/bin/
+#			cp geoip.dat /usr/bin/
+#			cp geosite.dat /usr/bin/
+#			wget -O /lib/systemd/system/v2ray.service ${VPSURL}${VPSPATH}/v2ray.service
+#		fi
 	else
 		apt-get -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-overwrite" -y install v2ray=${V2RAY_VERSION}
 	fi
 	if [ ! -f /etc/v2ray/v2ray-server.json ]; then
 		wget -O /etc/v2ray/v2ray-server.json ${VPSURL}${VPSPATH}/v2ray-server.json
 		sed -i "s:V2RAY_UUID:$V2RAY_UUID:g" /etc/v2ray/v2ray-server.json
+	fi
+	if ([ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]) && [ -z "$(grep mptcp /etc/v2ray/v2ray-server.json)" ]; then
+		sed 's/"sockopt": {/&\n                    "mptcp": true,/' /etc/v2ray/v2ray-server.json
 	fi
 	rm -f /etc/v2ray/config.json
 	ln -s /etc/v2ray/v2ray-server.json /etc/v2ray/config.json
@@ -894,9 +914,9 @@ if [ "$V2RAY" = "yes" ]; then
 	fi
 	systemctl daemon-reload
 	systemctl enable v2ray.service
-	if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
-		mptcpize enable v2ray
-	fi
+	#if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
+	#	mptcpize enable v2ray
+	#fi
 fi
 
 if systemctl -q is-active mlvpn@mlvpn0.service; then
@@ -918,10 +938,10 @@ if [ "$MLVPN" = "yes" ]; then
 		apt-get -y install build-essential pkg-config autoconf automake libpcap-dev unzip git
 		rm -rf /tmp/mlvpn
 		cd /tmp
-		#git clone https://hub.55860.com/markfoodyburton/MLVPN.git /tmp/mlvpn
-		#git clone https://hub.55860.com/flohoff/MLVPN.git /tmp/mlvpn
+		#git clone https://github.com/markfoodyburton/MLVPN.git /tmp/mlvpn
+		#git clone https://github.com/flohoff/MLVPN.git /tmp/mlvpn
 		git clone https://hub.55860.com/zehome/MLVPN.git /tmp/mlvpn
-		#git clone https://hub.55860.com/link4all/MLVPN.git /tmp/mlvpn
+		#git clone https://github.com/link4all/MLVPN.git /tmp/mlvpn
 		cd /tmp/mlvpn
 		git checkout ${MLVPN_VERSION}
 		./autogen.sh
@@ -1309,7 +1329,7 @@ if [ "$SOURCES" = "yes" ]; then
 	if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
 		wget -O /tmp/glorytun-0.0.35.tar.gz https://hub.55860.com/Ysurac/glorytun/archive/refs/heads/tcp.tar.gz
 	else
-		wget -O /tmp/glorytun-0.0.35.tar.gz http://hub.55860.com/angt/glorytun/releases/download/v0.0.35/glorytun-0.0.35.tar.gz
+		wget -O /tmp/glorytun-0.0.35.tar.gz https://hub.55860.com/angt/glorytun/releases/download/v0.0.35/glorytun-0.0.35.tar.gz
 	fi
 	tar xzf glorytun-0.0.35.tar.gz
 	if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
@@ -1470,6 +1490,8 @@ if [ "$(ip r | awk '/default/&&/src/ {print $7}')" != "" ] && [ "$(ip r | awk '/
 	sed -i "s/MASQUERADE/SNAT($(ip r | awk '/default/&&/src/ {print $7}'))/" /etc/shorewall/snat
 fi
 
+# Limit /var/log/journal size
+sed -i 's/#SystemMaxUse=/SystemMaxUse=100M/' /etc/systemd/journald.conf
 
 if [ "$TLS" = "yes" ]; then
 	VPS_CERT=0
