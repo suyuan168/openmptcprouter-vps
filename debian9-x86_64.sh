@@ -413,7 +413,7 @@ if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
 	apt-get -y install --no-install-recommends build-essential
 	cd /tmp
 	apt-get -y install git
-	git clone https://https://hub.55860.com/Ysurac/mptcpize.git
+	git clone https://hub.55860.com/Ysurac/mptcpize.git
 	cd mptcpize
 	make
 	make install
