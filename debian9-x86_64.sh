@@ -58,7 +58,7 @@ GLORYTUN_TCP_BINARY_VERSION="0.0.35-6"
 #MLVPN_VERSION="8f9720978b28c1954f9f229525333547283316d2"
 MLVPN_VERSION="8aa1b16d843ea68734e2520e39a34cb7f3d61b2b"
 MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
-UBOND_VERSION="f9fb6aa0a65e8e20950977bda970c90012f830d7"
+UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
 OMR_ADMIN_VERSION="18f16e21facff80fe91c62ba7b3ea5cfe587fcc3"
@@ -118,8 +118,8 @@ fi
 
 echo "Check architecture..."
 ARCH=$(dpkg --print-architecture | tr -d "\n")
-if [ "$UPSTREAM6" != "yes" ] && [ "$ARCH" != "amd64" ]; then
-	echo "Only x86_64 (amd64) is supported"
+if [ "$UPSTREAM6" != "yes" ] && [ "$ARCH" != "amd64" ] && [ "$ID" != "debian" ]; then
+	echo "Only x86_64 (amd64) is supported on this OS"
 	exit 1
 fi
 
@@ -218,6 +218,7 @@ if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "10" ] && [ "$UPDATE_OS" = "yes" ] 
 	apt-get -y -f --force-yes upgrade
 	apt-get -y -f --force-yes dist-upgrade
 	sed -i 's:buster:bullseye:g' /etc/apt/sources.list
+	sed -i 's:bullseye/updates:bullseye-security:g' /etc/apt/sources.list
 	apt-get update --allow-releaseinfo-change
 	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" upgrade
 	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" dist-upgrade
@@ -242,6 +243,16 @@ if [ "$ID" = "ubuntu" ] && [ "$VERSION_ID" = "18.04" ] && [ "$UPDATE_OS" = "yes"
 	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" upgrade
 	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" dist-upgrade
 	VERSION_ID="20.04"
+fi
+if [ "$ID" = "ubuntu" ] && [ "$VERSION_ID" = "18.04" ] && [ "$UPDATE_OS" = "yes" ] && [ "$UPSTREAM6" = "yes" ]; then
+	echo "Update Ubuntu 20.04 to Ubuntu 22.04"
+	apt-get -y -f --force-yes upgrade
+	apt-get -y -f --force-yes dist-upgrade
+	sed -i 's:focal:jammy:g' /etc/apt/sources.list
+	apt-get update --allow-releaseinfo-change
+	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" upgrade
+	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" dist-upgrade
+	VERSION_ID="22.04"
 fi
 
 # Add OpenMPTCProuter repo
@@ -395,6 +406,9 @@ if [ "$UPSTREAM6" != "yes" ]; then
 	bash update-grub.sh ${KERNEL_RELEASE}
 	[ -f /boot/grub/grub.cfg ] && sed -i 's/default="1>0"/default="0"/' /boot/grub/grub.cfg 2>&1 >/dev/null
 elif [ "$update" != "0" ]; then 
+	if [ "$ID" = "ubuntu" ] && [ -z "$(uname -a | grep '6.1')" ]; then
+		apt-get -y install $(apt-cache search linux-image-unsigned-6.1.0 | tail -n 1 | cut -d" " -f)
+	fi
 	[ -f /etc/default/grub ] && {
 		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
 		[ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
@@ -439,12 +453,12 @@ if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
 		echo "MPTCPize iperf3..."
 		mptcpize enable iperf3
 	fi
-	if [ "$UPSTREAM6" = "yes" ]; then
-		apt-get -y install $(dpkg --get-selections | grep linux-image-6.1 | grep -v dbg | cut -f1)-dbg
-		apt-get -y install systemtap
-		mkdir -p /usr/share/systemtap-mptcp
-		wget -O /usr/share/systemtap-mptcp/mptcp-app.stap ${VPSURL}${VPSPATH}/mptcp-app.stap
-	fi
+	#if [ "$UPSTREAM6" = "yes" ]; then
+	#	apt-get -y install $(dpkg --get-selections | grep linux-image-6.1 | grep -v dbg | cut -f1)-dbg
+	#	apt-get -y install systemtap
+	#	mkdir -p /usr/share/systemtap-mptcp
+	#	wget -O /usr/share/systemtap-mptcp/mptcp-app.stap ${VPSURL}${VPSPATH}/mptcp-app.stap
+	#fi
 fi
 
 apt-get -y remove shadowsocks-libev
