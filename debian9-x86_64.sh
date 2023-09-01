@@ -61,8 +61,8 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="d77ffb62084271a388a09d1b0d17e42aae0514ab"
-OMR_ADMIN_BINARY_VERSION="0.3+20230828"
+OMR_ADMIN_VERSION="80ff9621748ec198b3a81660539a144ef443a531"
+OMR_ADMIN_BINARY_VERSION="0.3+20230901"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
@@ -405,9 +405,9 @@ if [ "$UPSTREAM6" != "yes" ]; then
 	bash update-grub.sh ${KERNEL_VERSION}-mptcp
 	bash update-grub.sh ${KERNEL_RELEASE}
 	[ -f /boot/grub/grub.cfg ] && sed -i 's/default="1>0"/default="0"/' /boot/grub/grub.cfg 2>&1 >/dev/null
-elif [ "$update" != "0" ]; then 
+else 
 	if [ "$ID" = "ubuntu" ] && [ -z "$(uname -a | grep '6.1')" ]; then
-		apt-get -y install $(apt-cache search linux-image-unsigned-6.1.0 | tail -n 1 | cut -d" " -f)
+		apt-get -y install $(apt-cache search linux-image-unsigned-6.1.0 | tail -n 1 | cut -d" " -f1)
 	fi
 	[ -f /etc/default/grub ] && {
 		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
@@ -420,6 +420,7 @@ if [ "$ARCH" = "amd64" ]; then
 	apt-get -y -o Dpkg::Options::="--force-overwrite" install tracebox
 	echo "Install iperf3 OpenMPTCProuter edition"
 	apt-get -y -o Dpkg::Options::="--force-overwrite" install omr-iperf3
+	chmod 644 /lib/systemd/system/iperf3.service
 fi
 
 if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
@@ -547,51 +548,53 @@ else
 	apt-get -y -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-overwrite" install omr-shadowsocks-libev=${SHADOWSOCKS_BINARY_VERSION}
 fi
 
-# Load OLIA Congestion module at boot time
-if ! grep -q olia /etc/modules ; then
-	echo mptcp_olia >> /etc/modules
-fi
-# Load WVEGAS Congestion module at boot time
-if ! grep -q wvegas /etc/modules ; then
-	echo mptcp_wvegas >> /etc/modules
-fi
-# Load BALIA Congestion module at boot time
-if ! grep -q balia /etc/modules ; then
-	echo mptcp_balia >> /etc/modules
-fi
 # Load BBR Congestion module at boot time
 if ! grep -q bbr /etc/modules ; then
 	echo tcp_bbr >> /etc/modules
 fi
-# Load BBRv2 Congestion module at boot time
-if ! grep -q bbr2 /etc/modules ; then
-	echo tcp_bbr2 >> /etc/modules
-fi
-# Load mctcpdesync Congestion module at boot time
-if ! grep -q mctcp_desync /etc/modules ; then
-	echo mctcp_desync >> /etc/modules
-fi
-# Load ndiffports module at boot time
-if ! grep -q mptcp_ndiffports /etc/modules ; then
-	echo mptcp_ndiffports >> /etc/modules
-fi
-# Load redundant module at boot time
-if ! grep -q mptcp_redundant /etc/modules ; then
-	echo mptcp_redundant >> /etc/modules
-fi
-# Load rr module at boot time
-if ! grep -q mptcp_rr /etc/modules ; then
-	echo mptcp_rr >> /etc/modules
-fi
-# Load mctcp ECF scheduler at boot time
-if ! grep -q mptcp_ecf /etc/modules ; then
-	echo mptcp_ecf >> /etc/modules
-fi
-# Load mctcp BLEST scheduler at boot time
-if ! grep -q mptcp_blest /etc/modules ; then
-	echo mptcp_blest >> /etc/modules
-fi
 
+if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
+	# Load OLIA Congestion module at boot time
+	if ! grep -q olia /etc/modules ; then
+		echo mptcp_olia >> /etc/modules
+	fi
+	# Load WVEGAS Congestion module at boot time
+	if ! grep -q wvegas /etc/modules ; then
+		echo mptcp_wvegas >> /etc/modules
+	fi
+	# Load BALIA Congestion module at boot time
+	if ! grep -q balia /etc/modules ; then
+		echo mptcp_balia >> /etc/modules
+	fi
+	# Load BBRv2 Congestion module at boot time
+	if ! grep -q bbr2 /etc/modules ; then
+		echo tcp_bbr2 >> /etc/modules
+	fi
+	# Load mctcpdesync Congestion module at boot time
+	if ! grep -q mctcp_desync /etc/modules ; then
+		echo mctcp_desync >> /etc/modules
+	fi
+	# Load ndiffports module at boot time
+	if ! grep -q mptcp_ndiffports /etc/modules ; then
+		echo mptcp_ndiffports >> /etc/modules
+	fi
+	# Load redundant module at boot time
+	if ! grep -q mptcp_redundant /etc/modules ; then
+		echo mptcp_redundant >> /etc/modules
+	fi
+	# Load rr module at boot time
+	if ! grep -q mptcp_rr /etc/modules ; then
+		echo mptcp_rr >> /etc/modules
+	fi
+	# Load mctcp ECF scheduler at boot time
+	if ! grep -q mptcp_ecf /etc/modules ; then
+		echo mptcp_ecf >> /etc/modules
+	fi
+	# Load mctcp BLEST scheduler at boot time
+	if ! grep -q mptcp_blest /etc/modules ; then
+		echo mptcp_blest >> /etc/modules
+	fi
+fi
 if systemctl -q is-active omr-admin.service; then
 	systemctl -q stop omr-admin > /dev/null 2>&1
 fi
@@ -721,6 +724,8 @@ if [ "$OMR_ADMIN" = "yes" ]; then
 	[ "$NOINTERNET" = "yes" ] && {
 		sed -i 's/"port": 65500,/"port": 65500,\n    "internet": false,/' /etc/openmptcprouter-vps-admin/omr-admin-config.json
 	}
+	chmod 644 /lib/systemd/system/omr-admin.service
+	chmod 644 /lib/systemd/system/omr-admin-ipv6.service
 	#[ "$(ip -6 a)" != "" ] && sed -i 's/0.0.0.0/::/g' /usr/local/bin/omr-admin.py
 	[ "$(ip -6 a)" != "" ] && {
 		systemctl enable omr-admin-ipv6.service
@@ -915,7 +920,8 @@ if [ "$V2RAY" = "yes" ]; then
 		apt-get -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-overwrite" -y install v2ray=${V2RAY_VERSION}
 	fi
 	if [ -f /etc/v2ray/v2ray-server.json ]; then
-		V2RAY_UUID=$(grep -Po '"'"id"'"\s*:\s*"\K([^"]*)' v2ray-server.json | head -n 1 | tr -d "\n")
+		V2RAY_UUID2=$(grep -Po '"'"id"'"\s*:\s*"\K([^"]*)' /etc/v2ray/v2ray-server.json | head -n 1 | tr -d "\n")
+		[ -n "$V2RAY_UUID2" ] && V2RAY_UUID="$V2RAY_UUID2"
 	fi
 	#if [ ! -f /etc/v2ray/v2ray-server.json ]; then
 		wget -O /etc/v2ray/v2ray-server.json ${VPSURL}${VPSPATH}/v2ray-server.json
@@ -1202,7 +1208,7 @@ if [ "$OPENVPN" = "yes" ]; then
 		cp ${DIR}/openvpn-bonding8.conf /etc/openvpn/bonding8.conf
 	fi
 	mkdir -p /etc/openvpn/ccd
-	
+	chmod 644 /lib/systemd/system/openvpn*.service
 	systemctl enable openvpn@tun0.service
 	systemctl enable openvpn@tun1.service
 	if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
