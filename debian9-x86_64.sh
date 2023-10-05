@@ -66,8 +66,8 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="4e78d8a259e007e661642cb3a8cee5c3aed3edab"
-OMR_ADMIN_BINARY_VERSION="0.4+20230929"
+OMR_ADMIN_VERSION="1a7fe05463aab98666b1aaa868ad7b7573fca8f8"
+OMR_ADMIN_BINARY_VERSION="0.4+20231004"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
@@ -475,7 +475,7 @@ if [ "$SOURCES" = "yes" ]; then
 	#apt -t stretch-backports -y install shadowsocks-libev
 	## Compile Shadowsocks
 	#rm -rf /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}
-	#wget -O /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz http://github.com/shadowsocks/shadowsocks-libev/releases/download/v${SHADOWSOCKS_VERSION}/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz
+	#wget -O /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz http://hub.55860.com/shadowsocks/shadowsocks-libev/releases/download/v${SHADOWSOCKS_VERSION}/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz
 	cd /tmp
 	rm -rf shadowsocks-libev
 	git clone https://hub.55860.com/suyuan168/shadowsocks-libev.git
@@ -922,7 +922,7 @@ if [ "$SHADOWSOCKS_GO" = "yes" ]; then
 	#PSK2=$(grep -Po '"'"psk"'"\s*:\s*"\K([^"]*)' /etc/shadowsocks-go/server.json | head -n 1 | tr -d "\n")
 	#[ -n "$PSK2" ] && PSK="$PSK2"
 	#fi
-	#wget -O /etc/shadowsocks-go/server.json ${VPSURL}${VPSPATH}/shadowsocks-go-server.json
+	wget -O /etc/shadowsocks-go/server.json ${VPSURL}${VPSPATH}/shadowsocks-go.server.json
 	sed -i "s:\"PSK\":\"$PSK\":g" /etc/shadowsocks-go/server.json
 	sed -i "s:UPSK:$UPSK:g" /etc/shadowsocks-go/upsks.json
 	chmod 644 /lib/systemd/system/shadowsocks-go.service
@@ -1722,6 +1722,8 @@ if [ "$update" = "0" ]; then
 	echo 'Shadowsocks encryption: chacha20'
 	echo 'Your shadowsocks key: '
 	echo $SHADOWSOCKS_PASS
+	echo 'Your shadowsocks 2022 key: '
+	echo "${PSK}:${UPSK}"
 	echo 'Glorytun port: 65001'
 	echo 'Glorytun encryption: chacha20'
 	echo 'Your glorytun key: '
@@ -1768,6 +1770,7 @@ if [ "$update" = "0" ]; then
 	Shadowsocks port: 65101
 	Shadowsocks encryption: chacha20
 	Your shadowsocks key: ${SHADOWSOCKS_PASS}
+	Your shadowsocks 2022 key: ${PSK}:${UPSK}
 	Glorytun port: 65001
 	Glorytun encryption: chacha20
 	Your glorytun key: ${GLORYTUN_PASS}
