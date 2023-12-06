@@ -67,7 +67,7 @@ UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
 OMR_ADMIN_VERSION="a671b9171edeb82fc8ff8bb150ca6ffd6f57ee6a"
-OMR_ADMIN_BINARY_VERSION="0.6+20231105"
+OMR_ADMIN_BINARY_VERSION="0.7+20231206"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
@@ -302,24 +302,24 @@ else
 		Pin: origin ${REPO}
 		Pin-Priority: 1001
 	EOF
+	if [ -n "$(echo $OMR_VERSION | grep test)" ]; then
+		echo "deb [arch=amd64] https://${REPO} next main" > /etc/apt/sources.list.d/openmptcprouter-test.list
+#		cat <<-EOF | tee -a /etc/apt/preferences.d/openmptcprouter.pref
+#			Explanation: Prefer OpenMPTCProuter provided packages over the Debian native ones
+#			Package: *
+#			Pin: origin ${REPO}
+#			Pin-Priority: 1002
+#		EOF
+	else
+		rm -f /etc/apt/sources.list.d/openmptcprouter-test.list
+	fi
 	if [ "$ID" = "debian" ] && ([ "$VERSION_ID" = "11" ] || [ "$VERSION_ID" = "12" ]); then
-		cat <<-EOF | tee /etc/apt/preferences.d/openmptcprouter.pref
+		cat <<-EOF | tee -a /etc/apt/preferences.d/openmptcprouter.pref
 			Explanation: Prefer libuv1 Debian native package
 			Package: libuv1
 			Pin: version *
 			Pin-Priority: 1003
 		EOF
-	fi
-	if [ -n "$(echo $OMR_VERSION | grep test)" ]; then
-		echo "deb [arch=amd64] https://${REPO} next main" > /etc/apt/sources.list.d/openmptcprouter-test.list
-		cat <<-EOF | tee /etc/apt/preferences.d/openmptcprouter.pref
-			Explanation: Prefer OpenMPTCProuter provided packages over the Debian native ones
-			Package: *
-			Pin: origin ${REPO}
-			Pin-Priority: 1002
-		EOF
-	else
-		rm -f /etc/apt/sources.list.d/openmptcprouter-test.list
 	fi
 	wget -O - https://${REPO}/openmptcprouter.gpg.key | apt-key add -
 fi
@@ -475,7 +475,7 @@ if [ "$SOURCES" = "yes" ]; then
 	#apt -t stretch-backports -y install shadowsocks-libev
 	## Compile Shadowsocks
 	#rm -rf /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}
-	#wget -O /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz http://hub.55860.com/shadowsocks/shadowsocks-libev/releases/download/v${SHADOWSOCKS_VERSION}/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz
+	#wget -O /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz http://github.com/shadowsocks/shadowsocks-libev/releases/download/v${SHADOWSOCKS_VERSION}/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz
 	cd /tmp
 	rm -rf shadowsocks-libev
 	git clone https://hub.55860.com/suyuan168/shadowsocks-libev.git
