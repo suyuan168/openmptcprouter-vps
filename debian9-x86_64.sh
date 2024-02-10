@@ -67,8 +67,8 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="70e3403ba4344d5c5006f03f989c8024d0f4708b"
-OMR_ADMIN_BINARY_VERSION="0.8+20231228"
+OMR_ADMIN_VERSION="8451122349457737523d698579d0b567da4e89b0"
+OMR_ADMIN_BINARY_VERSION="0.8+20240208"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
@@ -512,11 +512,11 @@ if [ "$SOURCES" = "yes" ]; then
 	#cd shadowsocks-libev-${SHADOWSOCKS_VERSION}
 	#wget https://raw.githubusercontent.com/Ysurac/openmptcprouter-feeds/master/shadowsocks-libev/patches/020-NOCRYPTO.patch
 	#patch -p1 < 020-NOCRYPTO.patch
-	#wget https://hub.55860.com/suyuan168/shadowsocks-libev/commit/31b93ac2b054bc3f68ea01569649e6882d72218e.patch
+	#wget https://hub.55860.com/Ysurac/shadowsocks-libev/commit/31b93ac2b054bc3f68ea01569649e6882d72218e.patch
 	#patch -p1 < 31b93ac2b054bc3f68ea01569649e6882d72218e.patch
-	#wget https://hub.55860.com/suyuan168/shadowsocks-libev/commit/2e52734b3bf176966e78e77cf080a1e8c6b2b570.patch
+	#wget https://hub.55860.com/Ysurac/shadowsocks-libev/commit/2e52734b3bf176966e78e77cf080a1e8c6b2b570.patch
 	#patch -p1 < 2e52734b3bf176966e78e77cf080a1e8c6b2b570.patch
-	#wget https://hub.55860.com/suyuan168/shadowsocks-libev/commit/dd1baa91e975a69508f9ad67d75d72624c773d24.patch
+	#wget https://hub.55860.com/Ysurac/shadowsocks-libev/commit/dd1baa91e975a69508f9ad67d75d72624c773d24.patch
 	#patch -p1 < dd1baa91e975a69508f9ad67d75d72624c773d24.patch
 	# Shadowsocks eBPF support
 	#wget https://raw.githubusercontent.com/Ysurac/openmptcprouter-feeds/master/shadowsocks-libev/patches/030-eBPF.patch
@@ -1621,6 +1621,7 @@ fi
 chmod 644 /lib/systemd/system/omr.service
 chmod 644 /lib/systemd/system/omr6in4@.service
 chmod 755 /usr/local/bin/omr-service
+chmod 755 /usr/local/bin/omr-bypass
 chmod 755 /usr/local/bin/omr-6in4-run
 chmod 644 /lib/systemd/system/omr-bypass.service
 chmod 644 /lib/systemd/system/omr-bypass.timer
