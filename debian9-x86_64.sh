@@ -1,11 +1,18 @@
 #!/bin/sh
 #
 # Copyright (C) 2018-2021 Ycarus (Yannick Chabanois) <ycarus@zugaina.org> for OpenMPTCProuter
+# 55860.com  openmptcprouter for china
 #
 # This is free software, licensed under the GNU General Public License v3 or later.
 # See /LICENSE for more information.
 #
-
+#!/bin/sh
+echo '===================================================================================='
+echo '本脚本由蚂蚁聚合路由器出品。仅供DIY爱好者免费学习使用。请勿用于商业。'
+echo '如果用于商业请选择蚂蚁聚合商业版，openmptcprouter合作伙伴请访问官网http://55860.com'
+echo '5秒后自动开始安装'
+echo '===================================================================================='
+sleep 5
 KERNEL=${KERNEL:-5.4}
 UPSTREAM=${UPSTREAM:-no}
 [ "$UPSTREAM" = "yes" ] && KERNEL="5.15"
@@ -97,7 +104,7 @@ VPSURL="https://www.openmptcprouter.com/"
 REPO="repo.openmptcprouter.com"
 CHINA=${CHINA:-no}
 
-OMR_VERSION="0.1029-test"
+OMR_VERSION="1038-5G"
 
 DIR=$( pwd )
 #"
@@ -181,7 +188,7 @@ if [ "$UPDATE" = "yes" ]; then
 		update="1"
 	elif [ -f /etc/motd.head ] && grep --quiet 'OpenMPTCProuter VPS' /etc/motd.head ; then
 		update="1"
-	elif [ -f /root/openmptcprouter_config.txt ]; then
+	elif [ -f /root/55860.com_config.txt ]; then
 		update="1"
 	fi
 	echo "Update mode"
@@ -1865,7 +1872,7 @@ if [ "$update" = "0" ]; then
 		echo 'You can set VPS_DOMAIN to a working domain if you want a certificate.'
 	fi
 	echo '===================================================================================='
-	echo 'Keys are also saved in /root/openmptcprouter_config.txt, you are free to remove them'
+	echo 'Keys are also saved in /root/55860.com_config.txt, you are free to remove them'
 	echo '===================================================================================='
 	echo '\033[1m  /!\ You need to reboot to enable MPTCP, shadowsocks, glorytun and shorewall /!\ \033[0m'
 	echo '------------------------------------------------------------------------------------'
@@ -1874,48 +1881,48 @@ if [ "$update" = "0" ]; then
 	echo '===================================================================================='
 
 	# Save info in file
-	cat > /root/openmptcprouter_config.txt <<-EOF
+	cat > /root/55860.com_config.txt <<-EOF
 	SSH port: 65222 (instead of port 22)
 	EOF
 	if [ "$SHADOWSOCKS" = "yes" ]; then
-		cat >> /root/openmptcprouter_config.txt <<-EOF
+		cat >> /root/55860.com_config.txt <<-EOF
 		Shadowsocks port: 65101
 		Shadowsocks encryption: chacha20
 		Your shadowsocks key: ${SHADOWSOCKS_PASS}
 		EOF
 	fi
 	if [ "$SHADOWSOCKS_GO" = "yes" ]; then
-		cat >> /root/openmptcprouter_config.txt <<-EOF
+		cat >> /root/55860.com_config.txt <<-EOF
 		Your shadowsocks 2022 key: ${PSK}:${UPSK}
 		EOF
 	fi
 	if ([ "$GLORYTUN_TCP" = "yes" ] || [ "$GLORYTUN_UDP" = "yes" ]); then
-		cat >> /root/openmptcprouter_config.txt <<-EOF
+		cat >> /root/55860.com_config.txt <<-EOF
 		Glorytun port: 65001
 		Glorytun encryption: chacha20
 		Your glorytun key: ${GLORYTUN_PASS}
 		EOF
 	fi
 	if [ "$DSVPN" = "yes" ]; then
-		cat >> /root/openmptcprouter_config.txt <<-EOF
+		cat >> /root/55860.com_config.txt <<-EOF
 		A Dead Simple VPN port: 65401
 		A Dead Simple VPN key: ${DSVPN_PASS}
 		EOF
 	fi
 	if [ "$MLVPN" = "yes" ]; then
-		cat >> /root/openmptcprouter_config.txt <<-EOF
+		cat >> /root/55860.com_config.txt <<-EOF
 		MLVPN first port: 65201
 		Your MLVPN password: $MLVPN_PASS
 		EOF
 	fi
 	if [ "$UBOND" = "yes" ]; then
-		cat >> /root/openmptcprouter_config.txt <<-EOF
+		cat >> /root/55860.com_config.txt <<-EOF
 		UBOND first port: 65251
 		Your UBOND password: $UBOND_PASS
 		EOF
 	fi
 	if [ "$OMR_ADMIN" = "yes" ]; then
-		cat >> /root/openmptcprouter_config.txt <<-EOF
+		cat >> /root/55860.com_config.txt <<-EOF
 		Your OpenMPTCProuter ADMIN API Server key (only for configuration via API access, you don't need it): $OMR_ADMIN_PASS_ADMIN
 		Your OpenMPTCProuter Server key: $OMR_ADMIN_PASS
 		Your OpenMPTCProuter Server username: openmptcprouter
@@ -1989,8 +1996,8 @@ else
 		echo 'Restarting OpenMPTCProuter VPS admin'
 		systemctl -q restart omr-admin
 		echo 'done'
-		if ! grep -q 'Server key' /root/openmptcprouter_config.txt ; then
-			cat >> /root/openmptcprouter_config.txt <<-EOF
+		if ! grep -q 'Server key' /root/55860.com_config.txt ; then
+			cat >> /root/55860.com_config.txt <<-EOF
 			Your OpenMPTCProuter Server key: $OMR_ADMIN_PASS
 			Your OpenMPTCProuter Server username: openmptcprouter
 			EOF
@@ -2003,7 +2010,7 @@ else
 			echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 			echo '===================================================================================='
 		else
-			echo '!!! Keys are in /root/openmptcprouter_config.txt !!!'
+			echo '!!! Keys are in /root/55860.com_config.txt !!!'
 		fi
 	fi
 	if [ "$VPS_CERT" = "0" ]; then
