@@ -5,7 +5,6 @@
 # This is free software, licensed under the GNU General Public License v3 or later.
 # See /LICENSE for more information.
 #
-#!/bin/sh
 echo '===================================================================================='
 echo '本脚本由蚂蚁聚合路由器出品。仅供DIY爱好者免费学习使用。请勿用于商业。'
 echo '如果用于商业请选择蚂蚁聚合商业版openmptcprouter合作伙伴请访问官网http://55860.com'
@@ -15,7 +14,7 @@ sleep 5
 KERNEL=${KERNEL:-5.4}
 UPSTREAM=${UPSTREAM:-no}
 [ "$UPSTREAM" = "yes" ] && KERNEL="5.15"
-UPSTREAM6=${UPSTREAM6:-no}
+UPSTREAM6=${UPSTREAM6:-yes}
 [ "$UPSTREAM6" = "yes" ] && KERNEL="6.1"
 SHADOWSOCKS_PASS=${SHADOWSOCKS_PASS:-$(head -c 32 /dev/urandom | base64 -w0)}
 GLORYTUN_PASS=${GLORYTUN_PASS:-$(od -vN "32" -An -tx1 /dev/urandom | tr '[:lower:]' '[:upper:]' | tr -d " \n")}
@@ -441,6 +440,14 @@ elif [ "$KERNEL" = "6.6" ] && [ "$ARCH" = "amd64" ]; then
 	echo 'deb http://deb.xanmod.org releases main' > /etc/apt/sources.list.d/xanmod-release.list
 	apt-get update
 	apt-get -y install linux-xanmod-x64v3
+	[ -f /etc/default/grub ] && {
+		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
+		[ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
+	}
+elif [ "$KERNEL" = "6.6" ] && [ "$ID" = "debian" ]; then
+	echo 'deb http://deb.debian.org/debian bookworm-backports main' > /etc/apt/sources.list.d/bookworm-backports.list
+	apt-get update
+	apt-get -y install $(apt-cache search linux-image-amd64-6.6 | tail -n 1 | cut -d" " -f1)
 	[ -f /etc/default/grub ] && {
 		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
 		[ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
