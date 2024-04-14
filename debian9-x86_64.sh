@@ -354,7 +354,7 @@ if [ "$ID" = "debian" ]; then
 		echo 'deb http://deb.debian.org/debian stretch-backports main' > /etc/apt/sources.list.d/stretch-backports.list
 	fi
 	# Add buster-backports repo
-	echo 'deb http://deb.debian.org/debian buster main' > /etc/apt/sources.list.d/buster-backports.list
+	echo 'deb http://deb.debian.org/debian buster main' > /etc/apt/sources.list.d/buster.list
 	if [ "$VERSION_ID" = "12" ]; then
 		echo 'deb http://deb.debian.org/debian bullseye main' > /etc/apt/sources.list.d/bullseye.list
 	fi
