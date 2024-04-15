@@ -234,33 +234,33 @@ apt-get -y install apt-transport-https gnupg openssh-server
 #if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "9" ] && [ "$UPDATE_DEBIAN" = "yes" ] && [ "$update" = "0" ]; then
 if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "9" ] && [ "$UPDATE_OS" = "yes" ]; then
 	echo "Update Debian 9 Stretch to Debian 10 Buster"
-	apt-get -y -f --force-yes --allow-downgrades upgrade
-	apt-get -y -f --force-yes --allow-downgrades dist-upgrade
+	apt-get -y -f --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades upgrade
+	apt-get -y -f --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades dist-upgrade
 	sed -i 's:stretch:buster:g' /etc/apt/sources.list
 	apt-get update --allow-releaseinfo-change
-	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" upgrade
-	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" dist-upgrade
+	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades upgrade
+	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades dist-upgrade
 	VERSION_ID="10"
 fi
 if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "10" ] && [ "$UPDATE_OS" = "yes" ] && ([ "$KERNEL" = "6.1" ] || [ "$KERNEL" = "6.6" ]); then
-	echo "Update Debian 10 Stretch to Debian 11 Buster"
-	apt-get -y -f --force-yes --allow-downgrades upgrade
-	apt-get -y -f --force-yes --allow-downgrades dist-upgrade
+	echo "Update Debian 10 Buster to Debian 11 Bullseye"
+	apt-get -y -f --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades upgrade
+	apt-get -y -f --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades dist-upgrade
 	sed -i 's:buster:bullseye:g' /etc/apt/sources.list
 	sed -i 's:bullseye/updates:bullseye-security:g' /etc/apt/sources.list
 	apt-get update --allow-releaseinfo-change
-	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" upgrade
-	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" dist-upgrade
+	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades upgrade
+	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades dist-upgrade
 	VERSION_ID="11"
 fi
 if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "11" ] && [ "$UPDATE_OS" = "yes" ] && ([ "$KERNEL" = "6.1" ] || [ "$KERNEL" = "6.6" ]); then
-	echo "Update Debian 11 Buster to Debian 12"
-	apt-get -y -f --force-yes --allow-downgrades upgrade
-	apt-get -y -f --force-yes --allow-downgrades dist-upgrade
+	echo "Update Debian 11 Bullseye to Debian 12 Bookworm"
+	apt-get -y -f --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades upgrade
+	apt-get -y -f --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades dist-upgrade
 	sed -i 's:bullseye:bookworm:g' /etc/apt/sources.list
 	apt-get update --allow-releaseinfo-change
-	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" upgrade
-	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" dist-upgrade
+	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades upgrade
+	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades dist-upgrade
 	VERSION_ID="12"
 fi
 if [ "$ID" = "ubuntu" ] && [ "$VERSION_ID" = "18.04" ] && [ "$UPDATE_OS" = "yes" ]; then
@@ -354,7 +354,7 @@ if [ "$ID" = "debian" ]; then
 		echo 'deb http://deb.debian.org/debian stretch-backports main' > /etc/apt/sources.list.d/stretch-backports.list
 	fi
 	# Add buster-backports repo
-	echo 'deb http://deb.debian.org/debian buster main' > /etc/apt/sources.list.d/buster.list
+	echo 'deb http://archive.debian.org/debian buster-backports main' > /etc/apt/sources.list.d/buster-backports.list
 	if [ "$VERSION_ID" = "12" ]; then
 		echo 'deb http://deb.debian.org/debian bullseye main' > /etc/apt/sources.list.d/bullseye.list
 	fi
