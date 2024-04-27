@@ -14,7 +14,7 @@ sleep 5
 KERNEL=${KERNEL:-5.4}
 UPSTREAM=${UPSTREAM:-no}
 [ "$UPSTREAM" = "yes" ] && KERNEL="5.15"
-UPSTREAM6=${UPSTREAM6:-yes}
+UPSTREAM6=${UPSTREAM6:-no}
 [ "$UPSTREAM6" = "yes" ] && KERNEL="6.1"
 SHADOWSOCKS_PASS=${SHADOWSOCKS_PASS:-$(head -c 32 /dev/urandom | base64 -w0)}
 GLORYTUN_PASS=${GLORYTUN_PASS:-$(od -vN "32" -An -tx1 /dev/urandom | tr '[:lower:]' '[:upper:]' | tr -d " \n")}
