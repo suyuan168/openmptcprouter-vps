@@ -54,6 +54,7 @@ SPEEDTEST=${SPEEDTEST:-yes}
 IPERF=${IPERF:-yes}
 LOCALFILES=${LOCALFILES:-no}
 INTERFACE=${INTERFACE:-$(ip -o -4 route show to default | grep -m 1 -Po '(?<=dev )(\S+)' | tr -d "\n")}
+INTERFACE6=${INTERFACE6:-$(ip -o -6 route show to default | grep -m 1 -Po '(?<=dev )(\S+)' | tr -d "\n")}
 KERNEL_VERSION="5.4.207"
 KERNEL_PACKAGE_VERSION="1.22"
 KERNEL_RELEASE="${KERNEL_VERSION}-mptcp_${KERNEL_PACKAGE_VERSION}"
@@ -78,8 +79,8 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="f974719ddc902246ac0cd559372495ec23b262df"
-OMR_ADMIN_BINARY_VERSION="0.9+20240324"
+OMR_ADMIN_VERSION="d2058f05b801c00d5dac88bda38bd90a59cc8b97"
+OMR_ADMIN_BINARY_VERSION="0.9+20240426"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
@@ -102,7 +103,7 @@ VPSURL="https://www.openmptcprouter.com/"
 REPO="repo.openmptcprouter.com"
 CHINA=${CHINA:-no}
 
-OMR_VERSION="1038-5G"
+OMR_VERSION="1039-5G"
 
 DIR=$( pwd )
 #"
@@ -220,6 +221,7 @@ echo "Remove lock and update packages list..."
 rm -f /var/lib/dpkg/lock
 rm -f /var/lib/dpkg/lock-frontend
 rm -f /var/cache/apt/archives/lock
+rm -f /etc/apt/sources.list.d/buster-backports.list
 if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "9" ]; then
 	apt-get update
 else
@@ -436,10 +438,10 @@ if [ "$KERNEL" = "5.4" ] || [ "$KERNEL" = "5.15" ]; then
 	bash update-grub.sh ${KERNEL_RELEASE}
 	[ -f /boot/grub/grub.cfg ] && sed -i 's/default="1>0"/default="0"/' /boot/grub/grub.cfg 2>&1 >/dev/null
 elif [ "$KERNEL" = "6.6" ] && [ "$ARCH" = "amd64" ]; then
-	wget https://dl.xanmod.org/archive.key -O /etc/apt/trusted.gpg.d/xanmod.gpg
+	wget https://dl.xanmod.org/archive.key -O /etc/apt/trusted.gpg.d/xanmod.asc
 	echo 'deb http://deb.xanmod.org releases main' > /etc/apt/sources.list.d/xanmod-release.list
 	apt-get update
-	apt-get -y install linux-xanmod-x64v3
+	apt-get -y install linux-xanmod-lts-x64v3
 	[ -f /etc/default/grub ] && {
 		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
 		[ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
@@ -454,7 +456,7 @@ elif [ "$KERNEL" = "6.6" ] && [ "$ID" = "debian" ]; then
 	}
 else 
 	if [ "$ID" = "ubuntu" ] && [ -z "$(uname -a | grep '6.1')" ]; then
-		apt-get -y install $(apt-cache search linux-image-unsigned-6.1.0 | tail -n 1 | cut -d" " -f1)
+		apt-get -y install $(apt-cache search linux-image-unsigned-6.1 | tail -n 1 | cut -d" " -f1)
 	fi
 	[ -f /etc/default/grub ] && {
 		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
@@ -518,8 +520,10 @@ if [ "$KERNEL" != "5.4" ]; then
 	fi
 	rm -rf iproute2
 
-	echo "MPTCPize iperf3..."
-	mptcpize enable iperf3 2>&1 >/dev/null
+	if [ "$ID" = "debian" ]; then
+		echo "MPTCPize iperf3..."
+		mptcpize enable iperf3 2>&1 >/dev/null
+	fi
 
 	#if [ "$UPSTREAM6" = "yes" ]; then
 	#	apt-get -y install $(dpkg --get-selections | grep linux-image-6.1 | grep -v dbg | cut -f1)-dbg
@@ -1704,7 +1708,7 @@ if [ "$update" = "0" ]; then
 	fi
 	tar xzf /etc/shorewall6/openmptcprouter-shorewall6.tar.gz -C /etc/shorewall6
 	rm /etc/shorewall6/openmptcprouter-shorewall6.tar.gz
-	sed -i "s:eth0:$INTERFACE:g" /etc/shorewall6/*
+	sed -i "s:eth0:$INTERFACE6:g" /etc/shorewall6/*
 	systemctl enable shorewall6
 else
 	# Update only needed firewall files
@@ -1736,7 +1740,7 @@ else
 	sed -i "s:eth0:$INTERFACE:g" /etc/shorewall/*
 	sed -i 's/^.*#DNAT/#DNAT/g' /etc/shorewall/rules
 	sed -i 's:10.0.0.2:$OMR_ADDR:g' /etc/shorewall/rules
-	sed -i "s:eth0:$INTERFACE:g" /etc/shorewall6/*
+	sed -i "s:eth0:$INTERFACE6:g" /etc/shorewall6/*
 	if [ "$LOCALFILES" = "no" ]; then
 		rm -rf ${DIR}/shorewall4
 		rm -rf ${DIR}/shorewall6
