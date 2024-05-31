@@ -11,6 +11,7 @@ echo '如果用于商业请选择蚂蚁聚合商业版openmptcprouter合作伙�
 echo '5秒后自动开始安装'
 echo '===================================================================================='
 sleep 5
+
 KERNEL=${KERNEL:-5.4}
 UPSTREAM=${UPSTREAM:-no}
 [ "$UPSTREAM" = "yes" ] && KERNEL="5.15"
@@ -79,7 +80,7 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="f9d5fc750c24f44d155ecb4116b38638f9971f09"
+OMR_ADMIN_VERSION="6d66d4999c11d3edfe209ce375e38b51fd314a82"
 OMR_ADMIN_BINARY_VERSION="0.9+20240528"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
