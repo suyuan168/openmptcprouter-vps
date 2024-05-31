@@ -1,10 +1,10 @@
 #!/bin/sh
 #
 # Copyright (C) 2018-2021 Ycarus (Yannick Chabanois) <ycarus@zugaina.org> for OpenMPTCProuter
-# 55860.com  openmptcprouter for china
+#
 # This is free software, licensed under the GNU General Public License v3 or later.
 # See /LICENSE for more information.
-#
+# 55860.com  openmptcprouter for china
 echo '===================================================================================='
 echo '本脚本由蚂蚁聚合路由器出品。仅供DIY爱好者免费学习使用。请勿用于商业。'
 echo '如果用于商业请选择蚂蚁聚合商业版openmptcprouter合作伙伴请访问官网http://55860.com'
@@ -79,8 +79,8 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="b0d2f8126c6a76239f6c78857452bd67294b8820"
-OMR_ADMIN_BINARY_VERSION="0.9+20240426"
+OMR_ADMIN_VERSION="f9d5fc750c24f44d155ecb4116b38638f9971f09"
+OMR_ADMIN_BINARY_VERSION="0.9+20240528"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
@@ -437,19 +437,21 @@ if [ "$KERNEL" = "5.4" ] || [ "$KERNEL" = "5.15" ]; then
 	bash update-grub.sh ${KERNEL_VERSION}-mptcp
 	bash update-grub.sh ${KERNEL_RELEASE}
 	[ -f /boot/grub/grub.cfg ] && sed -i 's/default="1>0"/default="0"/' /boot/grub/grub.cfg 2>&1 >/dev/null
-elif [ "$KERNEL" = "6.6" ] && [ "$ARCH" = "amd64" ]; then
-	wget https://dl.xanmod.org/archive.key -O /etc/apt/trusted.gpg.d/xanmod.asc
-	echo 'deb http://deb.xanmod.org releases main' > /etc/apt/sources.list.d/xanmod-release.list
-	apt-get update
-	apt-get -y install linux-xanmod-lts-x64v3
-	[ -f /etc/default/grub ] && {
-		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
-		[ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
-	}
+#elif [ "$KERNEL" = "6.6" ] && [ "$ARCH" = "amd64" ]; then
+#	wget https://dl.xanmod.org/archive.key -O /etc/apt/trusted.gpg.d/xanmod.asc
+#	echo 'deb http://deb.xanmod.org releases main' > /etc/apt/sources.list.d/xanmod-release.list
+#	apt-get update
+#	apt-get -y install linux-xanmod-lts-x64v3
+#	[ -f /etc/default/grub ] && {
+#		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
+#		[ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
+#	}
 elif [ "$KERNEL" = "6.6" ] && [ "$ID" = "debian" ]; then
 	echo 'deb http://deb.debian.org/debian bookworm-backports main' > /etc/apt/sources.list.d/bookworm-backports.list
 	apt-get update
-	apt-get -y install $(apt-cache search linux-image-amd64-6.6 | tail -n 1 | cut -d" " -f1)
+	latestkernel=$(apt-cache search linux-image-6.6 | grep -v headers | grep -v dbg | grep -v rt | tail -n 1 | cut -d" " -f1)
+	latestkernelheaders=$(echo $latestkernel | sed 's/image/headers/g')
+	apt-get -y install $latestkernel $latestkernelheaders
 	[ -f /etc/default/grub ] && {
 		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
 		[ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
@@ -491,6 +493,10 @@ if [ "$IPERF" = "yes" ]; then
 		cp ${DIR}/iperf3.override.conf /etc/systemd/system/iperf3.service.d/override.conf
 	fi
 fi
+
+rm -f /var/lib/dpkg/lock
+rm -f /var/lib/dpkg/lock-frontend
+
 
 if [ "$KERNEL" != "5.4" ]; then
 	echo "Compile and install mptcpize..."
