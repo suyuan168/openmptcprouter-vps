@@ -50,6 +50,7 @@ if [ "$KERNEL" != "5.4" ]; then
 	SOURCES="yes"
 fi
 NOINTERNET=${NOINTERNET:-no}
+GRETUNNELS=${GRETUNNELS:-yes}
 REINSTALL=${REINSTALL:-yes}
 SPEEDTEST=${SPEEDTEST:-yes}
 IPERF=${IPERF:-yes}
@@ -80,8 +81,8 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="6d66d4999c11d3edfe209ce375e38b51fd314a82"
-OMR_ADMIN_BINARY_VERSION="0.9+20240528"
+OMR_ADMIN_VERSION="bb58cbcfa51e1f08b32a5e93c6b2b3683aa80781"
+OMR_ADMIN_BINARY_VERSION="0.11+20240625"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
@@ -98,13 +99,13 @@ SHADOWSOCKS_BINARY_VERSION="3.3.5-3"
 SHADOWSOCKS_GO_VERSION="1.8.0"
 DEFAULT_USER="openmptcprouter"
 VPS_DOMAIN=${VPS_DOMAIN:-$(wget -4 -qO- -T 2 http://hostname.openmptcprouter.com)}
-VPSPATH="server-test"
+VPSPATH="server-55860.com"
 VPS_PUBLIC_IP=${VPS_PUBLIC_IP:-$(wget -4 -qO- -T 2 http://ip.openmptcprouter.com)}
 VPSURL="https://www.openmptcprouter.com/"
 REPO="repo.openmptcprouter.com"
 CHINA=${CHINA:-no}
 
-OMR_VERSION="1039-5G"
+OMR_VERSION="1040-5G"
 
 DIR=$( pwd )
 #"
@@ -438,15 +439,21 @@ if [ "$KERNEL" = "5.4" ] || [ "$KERNEL" = "5.15" ]; then
 	bash update-grub.sh ${KERNEL_VERSION}-mptcp
 	bash update-grub.sh ${KERNEL_RELEASE}
 	[ -f /boot/grub/grub.cfg ] && sed -i 's/default="1>0"/default="0"/' /boot/grub/grub.cfg 2>&1 >/dev/null
-#elif [ "$KERNEL" = "6.6" ] && [ "$ARCH" = "amd64" ]; then
-#	wget https://dl.xanmod.org/archive.key -O /etc/apt/trusted.gpg.d/xanmod.asc
-#	echo 'deb http://deb.xanmod.org releases main' > /etc/apt/sources.list.d/xanmod-release.list
+elif [ "$KERNEL" = "6.6" ] && [ "$ARCH" = "amd64" ]; then
+	wget -O /tmp/linux-image-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb ${VPSURL}kernel/linux-image-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb
+	wget -O /tmp/linux-headers-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb ${VPSURL}kernel/linux-headers-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb
+	echo "Install kernel linux-image-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb source release"
+	dpkg --force-all -i -B /tmp/linux-headers-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb
+	dpkg --force-all -i -B /tmp/linux-image-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb
+
+#	wget -qO - https://dl.xanmod.org/archive.key | gpg --batch --yes --dearmor -vo /usr/share/keyrings/xanmod-archive-keyring.gpg
+#	echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | tee /etc/apt/sources.list.d/xanmod-release.list
 #	apt-get update
 #	apt-get -y install linux-xanmod-lts-x64v3
-#	[ -f /etc/default/grub ] && {
-#		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
-#		[ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
-#	}
+	[ -f /etc/default/grub ] && {
+		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
+		[ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
+	}
 elif [ "$KERNEL" = "6.6" ] && [ "$ID" = "debian" ]; then
 	echo 'deb http://deb.debian.org/debian bookworm-backports main' > /etc/apt/sources.list.d/bookworm-backports.list
 	apt-get update
@@ -802,6 +809,9 @@ if [ "$OMR_ADMIN" = "yes" ]; then
 	sed -i "s:MySecretKey:$OMR_ADMIN_PASS:g" /etc/openmptcprouter-vps-admin/omr-admin-config.json
 	[ "$NOINTERNET" = "yes" ] && {
 		sed -i 's/"port": 65500,/"port": 65500,\n    "internet": false,/' /etc/openmptcprouter-vps-admin/omr-admin-config.json
+	}
+	[ "$GRETUNNELS" = "no" ] && {
+		sed -i 's/"port": 65500,/"port": 65500,\n    "gre_tunnels": false,/' /etc/openmptcprouter-vps-admin/omr-admin-config.json
 	}
 	chmod 644 /lib/systemd/system/omr-admin.service
 	chmod 644 /lib/systemd/system/omr-admin-ipv6.service
