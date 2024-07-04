@@ -81,8 +81,8 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="bb58cbcfa51e1f08b32a5e93c6b2b3683aa80781"
-OMR_ADMIN_BINARY_VERSION="0.11+20240625"
+OMR_ADMIN_VERSION="21d071ebece556f3114c18ed9e86414ea6c85e1c"
+OMR_ADMIN_BINARY_VERSION="0.11+20240704"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
@@ -209,7 +209,7 @@ fi
 # Force update key
 [ -f /etc/apt/sources.list.d/openmptcprouter.list ] && {
 	echo "Update ${REPO} key"
-	apt-key del '2FDF 70C8 228B 7F04 42FE  59F6 608F D17B 2B24 D936' 2>&1 >/dev/null
+	apt-key del '2FDF 70C8 228B 7F04 42FE  59F6 608F D17B 2B24 D936' >/dev/null 2>&1
 	if [ "$CHINA" = "yes" ]; then
 		#wget -O - https://gitee.com/ysurac/openmptcprouter-vps-debian/raw/main/openmptcprouter.gpg.key | apt-key add -
 		wget https://gitlab.com/ysurac/openmptcprouter-vps-debian/raw/main/openmptcprouter.gpg.key -O /etc/apt/trusted.gpg.d/openmptcprouter.gpg
@@ -438,13 +438,17 @@ if [ "$KERNEL" = "5.4" ] || [ "$KERNEL" = "5.15" ]; then
 	rm -f /etc/grub.d/30_os-prober
 	bash update-grub.sh ${KERNEL_VERSION}-mptcp
 	bash update-grub.sh ${KERNEL_RELEASE}
-	[ -f /boot/grub/grub.cfg ] && sed -i 's/default="1>0"/default="0"/' /boot/grub/grub.cfg 2>&1 >/dev/null
+	[ -f /boot/grub/grub.cfg ] && sed -i 's/default="1>0"/default="0"/' /boot/grub/grub.cfg >/dev/null 2>&1
 elif [ "$KERNEL" = "6.6" ] && [ "$ARCH" = "amd64" ]; then
-	wget -O /tmp/linux-image-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb ${VPSURL}kernel/linux-image-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb
-	wget -O /tmp/linux-headers-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb ${VPSURL}kernel/linux-headers-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb
-	echo "Install kernel linux-image-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb source release"
-	dpkg --force-all -i -B /tmp/linux-headers-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb
-	dpkg --force-all -i -B /tmp/linux-image-6.6.32-x64v3-xanmod1_6.6.32-x64v3-xanmod1-0~20240525.gefb5780_amd64.deb
+	# awk command from xanmod website
+	PSABI=$(awk 'BEGIN { while (!/flags/) if (getline < "/proc/cpuinfo" != 1) exit 1; if (/lm/&&/cmov/&&/cx8/&&/fpu/&&/fxsr/&&/mmx/&&/syscall/&&/sse2/) level = 1; if (level == 1 && /cx16/&&/lahf/&&/popcnt/&&/sse4_1/&&/sse4_2/&&/ssse3/) level = 2; if (level == 2 && /avx/&&/avx2/&&/bmi1/&&/bmi2/&&/f16c/&&/fma/&&/abm/&&/movbe/&&/xsave/) level = 3; if (level == 3 && /avx512f/&&/avx512bw/&&/avx512cd/&&/avx512dq/&&/avx512vl/) level = 4; if (level > 0) { print "x64v" level; exit level + 1 }; exit 1;}' | tr -d "\n")
+	KERNEL_VERSION="6.6.36"
+	KERNEL_REV="0~20240628.g36640c1"
+	wget -O /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+	wget -O /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+	echo "Install kernel linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1 source release"
+	dpkg --force-all -i -B /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+	dpkg --force-all -i -B /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 
 #	wget -qO - https://dl.xanmod.org/archive.key | gpg --batch --yes --dearmor -vo /usr/share/keyrings/xanmod-archive-keyring.gpg
 #	echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | tee /etc/apt/sources.list.d/xanmod-release.list
@@ -483,7 +487,7 @@ if [ "$IPERF" = "yes" ]; then
 	#apt-get -y -o Dpkg::Options::="--force-overwrite" install omr-iperf3
 	#chmod 644 /lib/systemd/system/iperf3.service
 	echo "Install iperf3"
-	[ "$ARCH" = "amd64" ] && apt-get -y remove omr-iperf3 omr-libiperf0 2>&1 >/dev/null
+	[ "$ARCH" = "amd64" ] && apt-get -y remove omr-iperf3 omr-libiperf0 >/dev/null 2>&1
 	apt-get -y install iperf3
 	if [ ! -f "/etc/iperf3/private.pem" ]; then
 		mkdir -p /etc/iperf3
@@ -536,7 +540,7 @@ if [ "$KERNEL" != "5.4" ]; then
 
 	if [ "$ID" = "debian" ]; then
 		echo "MPTCPize iperf3..."
-		mptcpize enable iperf3 2>&1 >/dev/null
+		mptcpize enable iperf3 >/dev/null 2>&1
 	fi
 
 	#if [ "$UPSTREAM6" = "yes" ]; then
@@ -615,15 +619,15 @@ if [ "$SHADOWSOCKS" = "yes" ]; then
 		#cd /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}
 		rm -f /var/lib/dpkg/lock
 		rm -f /var/lib/dpkg/lock-frontend
-		mk-build-deps --install --tool "apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends -y" 2>&1 >/dev/null
+		mk-build-deps --install --tool "apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends -y" >/dev/null 2>&1
 		rm -f /var/lib/dpkg/lock
 		rm -f /var/lib/dpkg/lock-frontend
-		dpkg-buildpackage -b -us -uc 2>&1 >/dev/null
+		dpkg-buildpackage -b -us -uc >/dev/null 2>&1
 		rm -f /var/lib/dpkg/lock
 		rm -f /var/lib/dpkg/lock-frontend
 		cd /tmp
 		#dpkg -i shadowsocks-libev_*.deb
-		dpkg -i omr-shadowsocks-libev_*.deb 2>&1 >/dev/null
+		dpkg -i omr-shadowsocks-libev_*.deb >/dev/null 2>&1
 		#mkdir -p /usr/lib/shadowsocks-libev
 		#cp -f /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}/src/*.ebpf /usr/lib/shadowsocks-libev
 		#rm -rf /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}
@@ -821,8 +825,8 @@ if [ "$OMR_ADMIN" = "yes" ]; then
 	}
 	systemctl enable omr-admin.service
 	if [ "$KERNEL" != "5.4" ]; then
-		mptcpize enable omr-admin.service 2>&1 >/dev/null
-		[ "$(ip -6 a)" != "" ] && mptcpize enable omr-admin-ipv6.service 2>&1 >/dev/null
+		mptcpize enable omr-admin.service >/dev/null 2>&1
+		[ "$(ip -6 a)" != "" ] && mptcpize enable omr-admin-ipv6.service >/dev/null 2>&1
 	fi
 fi
 
@@ -1398,7 +1402,7 @@ if [ "$OPENVPN" = "yes" ]; then
 			make-cadir /etc/openvpn/ca
 		fi
 		cd /etc/openvpn/ca
-		./easyrsa --batch init-pki 2>&1 >/dev/null
+		./easyrsa --batch init-pki >/dev/null 2>&1
 		./easyrsa --batch build-ca nopass
 		EASYRSA_CERT_EXPIRE=3650 ./easyrsa --batch build-server-full server nopass
 		EASYRSA_CERT_EXPIRE=3650 ./easyrsa --batch build-client-full "openmptcprouter" nopass
@@ -1455,7 +1459,7 @@ if [ "$OPENVPN" = "yes" ]; then
 	systemctl enable openvpn@tun0.service
 	systemctl enable openvpn@tun1.service
 	if [ "$KERNEL" != "5.4" ]; then
-		mptcpize enable openvpn@tun0 2>&1 >/dev/null
+		mptcpize enable openvpn@tun0 >/dev/null 2>&1
 	fi
 	systemctl enable openvpn@bonding1.service
 	systemctl enable openvpn@bonding2.service
@@ -1575,7 +1579,7 @@ if [ "$DSVPN" = "yes" ]; then
 		DSVPN_PASS=$(cat /etc/dsvpn/dsvpn0.key | tr -d "\n")
 	fi
 	if [ "$KERNEL" != "5.4" ]; then
-		mptcpize enable dsvpn-server@dsvpn0 2>&1 >/dev/null
+		mptcpize enable dsvpn-server@dsvpn0 >/dev/null 2>&1
 	fi
 fi
 
@@ -1794,7 +1798,7 @@ if [ "$TLS" = "yes" ]; then
 			#[ "$(shorewall  status | grep stopped)" = "" ] && shorewall open all all tcp 443
 			curl https://get.acme.sh | sh
 			systemctl -q restart shorewall
-			~/.acme.sh/acme.sh --force --alpn --issue -d $VPS_DOMAIN --pre-hook 'shorewall open all all tcp 443 2>&1 >/dev/null' --post-hook 'shorewall close all all tcp 443 2>&1 >/dev/null' 2>&1 >/dev/null
+			~/.acme.sh/acme.sh --force --alpn --issue -d $VPS_DOMAIN --pre-hook 'shorewall open all all tcp 443 >/dev/null 2>&1' --post-hook 'shorewall close all all tcp 443 >/dev/null 2>&1' >/dev/null 2>&1
 			set -e
 			if [ -f /root/.acme.sh/$VPS_DOMAIN/$VPS_DOMAIN.cer ]; then
 				rm -f /etc/openmptcprouter-vps-admin/cert.pem
@@ -1842,7 +1846,7 @@ else
 fi
 
 if [ "$SOURCES" != "yes" ]; then
-	apt-get -y install omr-server=${OMR_VERSION} 2>&1 >/dev/null || true
+	apt-get -y install omr-server=${OMR_VERSION} >/dev/null 2>&1 || true
 	rm -f /etc/openmtpcprouter-vps-admin/update-bin
 fi
 
