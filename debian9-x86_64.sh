@@ -84,8 +84,8 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="b31e764e7b6159b748b3b176bc26395e051a1f38"
-OMR_ADMIN_BINARY_VERSION="0.12+20240920"
+OMR_ADMIN_VERSION="371ce38ec213fb6d18b79a91e5aa354ea36b649f"
+OMR_ADMIN_BINARY_VERSION="0.13+20241016"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
@@ -603,7 +603,7 @@ if [ "$KERNEL" != "5.4" ]; then
 	#fi
 fi
 
-apt-get -y remove shadowsocks-libev
+apt-get -y remove shadowsocks-libev >/dev/null 2>&1
 if [ "$SHADOWSOCKS" = "yes" ]; then
 	if [ "$SOURCES" = "yes" ]; then
 		#apt -t stretch-backports -y install shadowsocks-libev
@@ -736,10 +736,10 @@ if [ "$KERNEL" = "5.4" ]; then
 		echo mptcp_blest >> /etc/modules
 	fi
 fi
-if systemctl -q is-active omr-admin.service; then
+if systemctl -q is-active omr-admin.service 2>/dev/null; then
 	systemctl -q stop omr-admin > /dev/null 2>&1
 fi
-if systemctl -q is-active omr-admin-ipv6.service; then
+if systemctl -q is-active omr-admin-ipv6.service 2>/dev/null; then
 	systemctl -q stop omr-admin-ipv6 > /dev/null 2>&1
 	systemctl -q disable omr-admin-ipv6 > /dev/null 2>&1
 fi
@@ -892,7 +892,7 @@ if [ "$OMR_ADMIN" = "yes" ]; then
 		mptcpize enable omr-admin.service >/dev/null 2>&1
 		#[ "$(ip -6 a)" != "" ] && mptcpize enable omr-admin-ipv6.service >/dev/null 2>&1
 	fi
-	if systemctl -q is-active omr-admin-ipv6.service; then
+	if systemctl -q is-active omr-admin-ipv6.service 2>/dev/null; then
 		systemctl -q stop omr-admin-ipv6 >/dev/null 2>&1
 		systemctl -q disable omr-admin-ipv6 >/dev/null 2>&1
 	fi
@@ -951,7 +951,7 @@ if [ "$SHADOWSOCKS" = "yes" ]; then
 	else
 		cp ${DIR}/shadowsocks-libev-manager@.service.in /lib/systemd/system/shadowsocks-libev-manager@.service
 	fi
-	if systemctl -q is-enabled shadowsocks-libev; then
+	if systemctl -q is-enabled shadowsocks-libev 2>/dev/null; then
 		systemctl -q disable shadowsocks-libev
 	fi
 	[ -f /etc/shadowsocks-libev/config.json ] && systemctl disable shadowsocks-libev-server@config.service
@@ -961,7 +961,7 @@ if [ "$SHADOWSOCKS" = "yes" ]; then
 			[ -f /etc/shadowsocks-libev/config$i.json ] && systemctl is-enabled shadowsocks-libev && systemctl disable shadowsocks-libev-server@config$i.service
 		done
 	fi
-	if systemctl -q is-active shadowsocks-libev-manager@manager; then
+	if systemctl -q is-active shadowsocks-libev-manager@manager 2>/dev/null; then
 		systemctl -q stop shadowsocks-libev-manager@manager > /dev/null 2>&1
 	fi
 fi
@@ -1050,7 +1050,7 @@ if [ "$OBFS" = "no" ] && [ "$V2RAY_PLUGIN" = "no" ] && [ -f /etc/shadowsocks-lib
 	sed -i -e '/plugin/d' -e 's/,,//' /etc/shadowsocks-libev/config.json
 fi
 
-if systemctl -q is-active shadowsocks-go.service; then
+if systemctl -q is-active shadowsocks-go.service 2>/dev/null; then
 	systemctl -q stop shadowsocks-go > /dev/null 2>&1
 	systemctl -q disable shadowsocks-go > /dev/null 2>&1
 fi
@@ -1092,7 +1092,7 @@ if [ "$SHADOWSOCKS_GO" = "yes" ]; then
 fi
 
 
-if systemctl -q is-active v2ray.service; then
+if systemctl -q is-active v2ray.service 2>/dev/null; then
 	systemctl -q stop v2ray > /dev/null 2>&1
 	systemctl -q disable v2ray > /dev/null 2>&1
 fi
@@ -1165,7 +1165,7 @@ if [ "$V2RAY" = "yes" ]; then
 	#fi
 fi
 
-if systemctl -q is-active xray.service; then
+if systemctl -q is-active xray.service 2>/dev/null; then
 	systemctl -q stop xray > /dev/null 2>&1
 	systemctl -q disable xray > /dev/null 2>&1
 fi
@@ -1239,7 +1239,7 @@ if [ "$XRAY" = "yes" ]; then
 	systemctl enable xray.service
 fi
 
-if systemctl -q is-active mlvpn@mlvpn0.service; then
+if systemctl -q is-active mlvpn@mlvpn0.service 2>/dev/null; then
 	systemctl -q stop mlvpn@mlvpn0 > /dev/null 2>&1
 	systemctl -q disable mlvpn@mlvpn0 > /dev/null 2>&1
 fi
@@ -1301,7 +1301,7 @@ if [ "$MLVPN" = "yes" ]; then
 	systemctl enable systemd-networkd.service
 	echo "install mlvpn done"
 fi
-if systemctl -q is-active ubond@ubond0.service; then
+if systemctl -q is-active ubond@ubond0.service 2>/dev/null; then
 	systemctl -q stop ubond@ubond0 > /dev/null 2>&1
 	systemctl -q disable ubond@ubond0 > /dev/null 2>&1
 fi
@@ -1357,7 +1357,7 @@ if [ "$UBOND" = "yes" ]; then
 	echo "install ubond done"
 fi
 
-if systemctl -q is-active wg-quick@wg0.service; then
+if systemctl -q is-active wg-quick@wg0.service 2>/dev/null; then
 	systemctl -q stop wg-quick@wg0 > /dev/null 2>&1
 	systemctl -q disable wg-quick@wg0 > /dev/null 2>&1
 fi
@@ -1410,7 +1410,7 @@ if [ "$WIREGUARD" = "yes" ]; then
 	echo "Install wireguard done"
 fi
 
-if systemctl -q is-active fail2ban.service; then
+if systemctl -q is-active fail2ban.service 2>/dev/null; then
 	systemctl -q stop fail2ban > /dev/null 2>&1
 	systemctl -q disable fail2ban > /dev/null 2>&1
 fi
@@ -1425,7 +1425,7 @@ if [ "$FAIL2BAN" = "yes" ]; then
 	echo "Install Fail2ban done"
 fi
 
-if systemctl -q is-active openvpn-server@tun0.service; then
+if systemctl -q is-active openvpn-server@tun0.service 2>/dev/null; then
 	systemctl -q stop openvpn-server@tun0 > /dev/null 2>&1
 	systemctl -q disable openvpn-server@tun0 > /dev/null 2>&1
 fi
@@ -1576,7 +1576,7 @@ fi
 
 echo 'Glorytun UDP'
 # Install Glorytun UDP
-if systemctl -q is-active glorytun-udp@tun0.service; then
+if systemctl -q is-active glorytun-udp@tun0.service 2>/dev/null; then
 	systemctl -q stop 'glorytun-udp@*' > /dev/null 2>&1
 fi
 if [ "$GLORYTUN_UDP" = "yes" ]; then
@@ -1645,7 +1645,7 @@ systemctl enable chrony
 if [ "$DSVPN" = "yes" ]; then
 	echo 'A Dead Simple VPN'
 	# Install A Dead Simple VPN
-	if systemctl -q is-active dsvpn-server.service; then
+	if systemctl -q is-active dsvpn-server.service 2>/dev/null; then
 		systemctl -q disable dsvpn-server > /dev/null 2>&1
 		systemctl -q stop dsvpn-server > /dev/null 2>&1
 	fi
@@ -1687,7 +1687,7 @@ if [ "$DSVPN" = "yes" ]; then
 fi
 
 # Install Glorytun TCP
-if systemctl -q is-active glorytun-tcp@tun0.service; then
+if systemctl -q is-active glorytun-tcp@tun0.service 2>/dev/null; then
 	systemctl -q stop 'glorytun-tcp@*' > /dev/null 2>&1
 fi
 if [ "$GLORYTUN_TCP" = "yes" ]; then
@@ -1794,7 +1794,7 @@ chmod 755 /usr/local/bin/omr-6in4-run
 chmod 644 /lib/systemd/system/omr-bypass.service
 chmod 644 /lib/systemd/system/omr-bypass.timer
 systemctl daemon-reload
-if systemctl -q is-active omr-6in4.service; then
+if systemctl -q is-active omr-6in4.service 2>/dev/null; then
 	systemctl -q stop omr-6in4 > /dev/null 2>&1
 	systemctl -q disable omr-6in4 > /dev/null 2>&1
 fi
