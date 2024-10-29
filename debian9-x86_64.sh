@@ -108,7 +108,7 @@ VPSURL="https://www.openmptcprouter.com/"
 REPO="repo.openmptcprouter.com"
 CHINA=${CHINA:-no}
 
-OMR_VERSION="0.1031-test"
+OMR_VERSION="0.1032-test"
 
 DIR=$( pwd )
 #"
@@ -252,21 +252,23 @@ if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "9" ] && [ "$UPDATE_OS" = "yes" ]; 
 	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades dist-upgrade
 	VERSION_ID="10"
 fi
-if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "10" ] && [ "$UPDATE_OS" = "yes" ] && [ "$KERNEL" != "5.4" ]; then
+if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "10" ] && [ "$UPDATE_OS" = "yes" ]; then
 	echo "Update Debian 10 Buster to Debian 11 Bullseye"
 	apt-get -y -f --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades upgrade
 	apt-get -y -f --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades dist-upgrade
 	sed -i 's:buster:bullseye:g' /etc/apt/sources.list
+	sed -i 's:archive:deb:g' /etc/apt/sources.list
 	sed -i 's:bullseye/updates:bullseye-security:g' /etc/apt/sources.list
 	apt-get update --allow-releaseinfo-change
 	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades upgrade
 	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades dist-upgrade
 	VERSION_ID="11"
 fi
-if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "11" ] && [ "$UPDATE_OS" = "yes" ] && [ "$KERNEL" != "5.4" ]; then
+if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "11" ] && [ "$UPDATE_OS" = "yes" ]; then
 	echo "Update Debian 11 Bullseye to Debian 12 Bookworm"
 	apt-get -y -f --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades upgrade
 	apt-get -y -f --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades dist-upgrade
+	sed -i 's:archive:deb:g' /etc/apt/sources.list
 	sed -i 's:bullseye:bookworm:g' /etc/apt/sources.list
 	apt-get update --allow-releaseinfo-change
 	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades upgrade
@@ -283,7 +285,7 @@ if [ "$ID" = "ubuntu" ] && [ "$VERSION_ID" = "18.04" ] && [ "$UPDATE_OS" = "yes"
 	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" dist-upgrade
 	VERSION_ID="20.04"
 fi
-if [ "$ID" = "ubuntu" ] && [ "$VERSION_ID" = "18.04" ] && [ "$UPDATE_OS" = "yes" ] && [ "$KERNEL" != "5.4" ]; then
+if [ "$ID" = "ubuntu" ] && [ "$VERSION_ID" = "18.04" ] && [ "$UPDATE_OS" = "yes" ]; then
 	echo "Update Ubuntu 20.04 to Ubuntu 22.04"
 	apt-get -y -f --force-yes --allow-downgrades upgrade
 	apt-get -y -f --force-yes --allow-downgrades dist-upgrade
@@ -1536,17 +1538,17 @@ if [ "$OPENVPN" = "yes" ]; then
 		fi
 	fi
 	if [ "$(ip -6 a 2>/dev/null)" = "" ]; then
-		sed -i 's/proto tcp6-server//' /etc/openvpn.tun0.conf
-		sed -i 's/proto udp6//' /etc/openvpn.tun1.conf
+		sed -i 's/proto tcp6-server//' /etc/openvpn/tun0.conf
+		sed -i 's/proto udp6//' /etc/openvpn/tun1.conf
 		if [ "$OPENVPN_BONDING" = "yes" ]; then
-			sed -i 's/proto udp6//' /etc/openvpn.bonding1.conf
-			sed -i 's/proto udp6//' /etc/openvpn.bonding2.conf
-			sed -i 's/proto udp6//' /etc/openvpn.bonding3.conf
-			sed -i 's/proto udp6//' /etc/openvpn.bonding4.conf
-			sed -i 's/proto udp6//' /etc/openvpn.bonding5.conf
-			sed -i 's/proto udp6//' /etc/openvpn.bonding6.conf
-			sed -i 's/proto udp6//' /etc/openvpn.bonding7.conf
-			sed -i 's/proto udp6//' /etc/openvpn.bonding8.conf
+			sed -i 's/proto udp6//' /etc/openvpn/bonding1.conf
+			sed -i 's/proto udp6//' /etc/openvpn/bonding2.conf
+			sed -i 's/proto udp6//' /etc/openvpn/bonding3.conf
+			sed -i 's/proto udp6//' /etc/openvpn/bonding4.conf
+			sed -i 's/proto udp6//' /etc/openvpn/bonding5.conf
+			sed -i 's/proto udp6//' /etc/openvpn/bonding6.conf
+			sed -i 's/proto udp6//' /etc/openvpn/bonding7.conf
+			sed -i 's/proto udp6//' /etc/openvpn/bonding8.conf
 		fi
 	fi
 	mkdir -p /etc/openvpn/ccd
