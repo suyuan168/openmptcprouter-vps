@@ -4,6 +4,7 @@
 #
 # This is free software, licensed under the GNU General Public License v3 or later.
 # See /LICENSE for more information.
+#
 # 55860.com  openmptcprouter for china
 echo '===================================================================================='
 echo '本脚本由蚂蚁聚合路由器出品。仅供DIY爱好者免费学习使用。请勿用于商业。'
@@ -11,8 +12,7 @@ echo '如果用于商业请选择蚂蚁聚合商业版openmptcprouter合作伙�
 echo '5秒后自动开始安装'
 echo '===================================================================================='
 sleep 5
-
-KERNEL=${KERNEL:-5.4}
+KERNEL=${KERNEL:-6.6}
 UPSTREAM=${UPSTREAM:-no}
 [ "$UPSTREAM" = "yes" ] && KERNEL="6.1"
 UPSTREAM6=${UPSTREAM6:-no}
@@ -84,14 +84,14 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="8caecd236d8d8239e7d77fa3f6de62619bd564ee"
-OMR_ADMIN_BINARY_VERSION="0.14+20241025"
+OMR_ADMIN_VERSION="be866bf752119b3460d907f92572fcac773c1a97"
+OMR_ADMIN_BINARY_VERSION="0.14+20241125"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
 V2RAY_VERSION="5.7.0"
 V2RAY_PLUGIN_VERSION="4.43.0"
-XRAY_VERSION="1.8.24"
+XRAY_VERSION="24.11.5"
 EASYRSA_VERSION="3.0.6"
 #SHADOWSOCKS_VERSION="7407b214f335f0e2068a8622ef3674d868218e17"
 #if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
@@ -122,7 +122,7 @@ echo "Check user..."
 if [ "$(id -u)" -ne 0 ]; then echo 'Please run as root.' >&2; exit 1; fi
 
 # Check Kernel
-if [ "$KERNEL" != "5.4" ] && [ "$KERNEL" != "6.1" ] && [ "$KERNEL" != "6.6" ] && [ "$KERNEL" != "6.10" ] && [ "$KERNEL" != "6.11" ]; then
+if [ "$KERNEL" != "5.4" ] && [ "$KERNEL" != "6.1" ] && [ "$KERNEL" != "6.6" ] && [ "$KERNEL" != "6.10" ] && [ "$KERNEL" != "6.11" ] && [ "$KERNEL" != "6.12" ]; then
 	echo "Only kernels 5.4, 6.1, 6.6, 6.10 and 6.11 are currently supported"
 	exit 1
 fi
@@ -512,6 +512,32 @@ elif [ "$KERNEL" = "6.11" ] && [ "$ARCH" = "amd64" ]; then
 		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
 		[ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
 	}
+elif [ "$KERNEL" = "6.12" ] && [ "$ARCH" = "amd64" ]; then
+	# awk command from xanmod website
+	PSABI=$(awk 'BEGIN { while (!/flags/) if (getline < "/proc/cpuinfo" != 1) exit 1; if (/lm/&&/cmov/&&/cx8/&&/fpu/&&/fxsr/&&/mmx/&&/syscall/&&/sse2/) level = 1; if (level == 1 && /cx16/&&/lahf/&&/popcnt/&&/sse4_1/&&/sse4_2/&&/ssse3/) level = 2; if (level == 2 && /avx/&&/avx2/&&/bmi1/&&/bmi2/&&/f16c/&&/fma/&&/abm/&&/movbe/&&/xsave/) level = 3; if (level == 3 && /avx512f/&&/avx512bw/&&/avx512cd/&&/avx512dq/&&/avx512vl/) level = 4; if (level > 0) { print "x64v" level; exit level + 1 }; exit 1;}' | tr -d "\n")
+	if [ "$PSABI" = "x64v1" ]; then
+		echo "psABI x86-64-v1 not supported by Xanmod kernel 6.11, use an older kernel"
+		exit 0
+	fi
+	if [ "$PSABI" = "x64v4" ]; then
+		PSABI="x64v3"
+	fi
+	KERNEL_VERSION="6.12.1"
+	KERNEL_REV="0~20241122.g9695ae7"
+	wget -O /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+	wget -O /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+	echo "Install kernel linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1 source release"
+	dpkg --force-all -i -B /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+	dpkg --force-all -i -B /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+
+#	wget -qO - https://dl.xanmod.org/archive.key | gpg --batch --yes --dearmor -vo /usr/share/keyrings/xanmod-archive-keyring.gpg
+#	echo 'deb [signed-by=/usr/share/keyrings/xanmod-archive-keyring.gpg] http://deb.xanmod.org releases main' | tee /etc/apt/sources.list.d/xanmod-release.list
+#	apt-get update
+#	apt-get -y install linux-xanmod-lts-x64v3
+	[ -f /etc/default/grub ] && {
+		sed -i "s@^\(GRUB_DEFAULT=\).*@\1\"0\"@" /etc/default/grub >/dev/null 2>&1
+		[ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
+	}
 elif [ "$KERNEL" = "6.6" ] && [ "$ID" = "debian" ]; then
 	echo 'deb http://deb.debian.org/debian bookworm-backports main' > /etc/apt/sources.list.d/bookworm-backports.list
 	apt-get update
@@ -870,18 +896,18 @@ if [ "$OMR_ADMIN" = "yes" ]; then
 	sed -i "s:AdminMySecretKey:$OMR_ADMIN_PASS_ADMIN:g" /etc/openmptcprouter-vps-admin/omr-admin-config.json
 	sed -i "s:MySecretKey:$OMR_ADMIN_PASS:g" /etc/openmptcprouter-vps-admin/omr-admin-config.json
 	[ "$NOINTERNET" = "yes" ] && {
-		jq '. + {internet: false}' omr-admin-config.json > omr-admin-config.json.tmp
-		mv omr-admin-config.json.tmp omr-admin-config.json
+		jq '. + {internet: false}' /etc/openmptcprouter-vps-admin/omr-admin-config.json > /etc/openmptcprouter-vps-admin/omr-admin-config.json.tmp
+		mv /etc/openmptcprouter-vps-admin/omr-admin-config.json.tmp /etc/openmptcprouter-vps-admin/omr-admin-config.json
 		#sed -i 's/"port": 65500,/"port": 65500,\n    "internet": false,/' /etc/openmptcprouter-vps-admin/omr-admin-config.json
 	}
 	[ "$GRETUNNELS" = "no" ] && {
-		jq '. + {gre_tunnels: false}' omr-admin-config.json > omr-admin-config.json.tmp
-		mv omr-admin-config.json.tmp omr-admin-config.json
+		jq '. + {gre_tunnels: false}' /etc/openmptcprouter-vps-admin/omr-admin-config.json > /etc/openmptcprouter-vps-admin/omr-admin-config.json.tmp
+		mv /etc/openmptcprouter-vps-admin/omr-admin-config.json.tmp /etc/openmptcprouter-vps-admin/omr-admin-config.json
 		#sed -i 's/"port": 65500,/"port": 65500,\n    "gre_tunnels": false,/' /etc/openmptcprouter-vps-admin/omr-admin-config.json
 	}
 	[ "$LANROUTES" = "no" ] && {
-		jq '. + {lan_routes: false}' omr-admin-config.json > omr-admin-config.json.tmp
-		mv omr-admin-config.json.tmp omr-admin-config.json
+		jq '. + {lan_routes: false}' /etc/openmptcprouter-vps-admin/omr-admin-config.json > /etc/openmptcprouter-vps-admin/omr-admin-config.json.tmp
+		mv /etc/openmptcprouter-vps-admin/omr-admin-config.json.tmp /etc/openmptcprouter-vps-admin/omr-admin-config.json
 	}
 	chmod 644 /lib/systemd/system/omr-admin.service
 	#chmod 644 /lib/systemd/system/omr-admin-ipv6.service
@@ -1202,11 +1228,14 @@ if [ "$XRAY" = "yes" ]; then
 		[ -n "$XRAY_X25519_PRIVATE_KEY2" ] && [ "$XRAY_X25519_PRIVATE_KEY2" != "XRAY_X25519_PRIVATE_KEY" ] && XRAY_X25519_PRIVATE_KEY="$XRAY_X25519_PRIVATE_KEY2"
 		XRAY_X25519_PUBLIC_KEY2=$(grep -Po '"'"publicKey"'"\s*:\s*"\K([^"]*)' /etc/xray/xray-vless_reality.json | head -n 1 | tr -d "\n")
 		[ -n "$XRAY_X25519_PUBLIC_KEY2" ] && [ "$XRAY_X25519_PUBLIC_KEY2" != "XRAY_X25519_PUBLIC_KEY" ] && XRAY_X25519_PUBLIC_KEY="$XRAY_X25519_PUBLIC_KEY2"
+		#jq -M 'del(.transport)' /etc/xray/xray-server.json > /etc/xray/xray-server.json.tmp
+		#mv -f /etc/xray/xray-server.json.tmp /etc/xray/xray-server.json
+
 	fi
 	jq -M 'del(.users[0].openmptcprouter.xray)' /etc/openmptcprouter-vps-admin/omr-admin-config.json > /etc/openmptcprouter-vps-admin/omr-admin-config.json.new
 	mv -f /etc/openmptcprouter-vps-admin/omr-admin-config.json /etc/openmptcprouter-vps-admin/omr-admin-config.json.bak
 	mv -f /etc/openmptcprouter-vps-admin/omr-admin-config.json.new /etc/openmptcprouter-vps-admin/omr-admin-config.json
-	#if [ ! -f /etc/xray/xray-server.json ]; then
+	if [ ! -f /etc/xray/xray-server.json ] || [ -z "$(grep mptcp /etc/xray/xray-server.json | grep true)" ]; then
 		wget -O /etc/xray/xray-server.json ${VPSURL}${VPSPATH}/xray-server.json
 		sed -i "s:XRAY_UUID:$XRAY_UUID:g" /etc/xray/xray-server.json
 		sed -i "s:V2RAY_UUID:$XRAY_UUID:g" /etc/xray/xray-server.json
@@ -1221,8 +1250,13 @@ if [ "$XRAY" = "yes" ]; then
 		sed -i "s:XRAY_UUID:$XRAY_UUID:g" /etc/xray/xray-vless-reality.json
 		sed -i "s:XRAY_X25519_PRIVATE_KEY:$XRAY_X25519_PRIVATE_KEY:g" /etc/xray/xray-vless-reality.json
 		sed -i "s:XRAY_X25519_PUBLIC_KEY:$XRAY_X25519_PUBLIC_KEY:g" /etc/xray/xray-vless-reality.json
-		
-	#fi
+		#for xrayuser in $(cat /etc/openmptcprouter-vps-admin/omr-admin-config.json | jq -r '.users[0][].username'); do
+		#	if [ "$xrayuser" != "admin" ] && [ "$xrayuser" != "openmptcprouter" ]; then
+		#		jq '. + {"level": 0, "alterId": 0, "email": $xrayuser,"id": $xrayid}' /etc/xray/xray-server.json > /etc/xray/xray-server.json.tmp
+		#		mv /etc/xray/xray-server.json.tmp /etc/xray/xray-server.json
+		#	fi
+		#done
+	fi
 	#if ([ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]) && [ -z "$(grep mptcp /etc/xray/xray-server.json | grep true)" ]; then
 	#	sed -i 's/"sockopt": {/&\n                    "mptcp": true,/' /etc/xray/xray-server.json
 	#fi
