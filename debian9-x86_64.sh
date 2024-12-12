@@ -523,7 +523,7 @@ elif [ "$KERNEL" = "6.12" ] && [ "$ARCH" = "amd64" ]; then
 		PSABI="x64v3"
 	fi
 	KERNEL_VERSION="6.12.1"
-	KERNEL_REV="0~20241122.g9695ae7"
+	KERNEL_REV="0~20241122.ge695ae7"
 	wget -O /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	wget -O /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	echo "Install kernel linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1 source release"
