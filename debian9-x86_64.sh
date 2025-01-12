@@ -84,8 +84,8 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="be866bf752119b3460d907f92572fcac773c1a97"
-OMR_ADMIN_BINARY_VERSION="0.14+20241125"
+OMR_ADMIN_VERSION="530d20c6b482d491accfa4ea5dd44afa5d1eccdc"
+OMR_ADMIN_BINARY_VERSION="0.14+20241216"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
@@ -230,6 +230,7 @@ rm -f /var/lib/dpkg/lock
 rm -f /var/lib/dpkg/lock-frontend
 rm -f /var/cache/apt/archives/lock
 rm -f /etc/apt/sources.list.d/buster-backports.list
+rm -f /etc/apt/sources.list.d/stretch-backports.list
 if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "9" ]; then
 	apt-get update
 else
@@ -522,8 +523,8 @@ elif [ "$KERNEL" = "6.12" ] && [ "$ARCH" = "amd64" ]; then
 	if [ "$PSABI" = "x64v4" ]; then
 		PSABI="x64v3"
 	fi
-	KERNEL_VERSION="6.12.1"
-	KERNEL_REV="0~20241122.ge695ae7"
+	KERNEL_VERSION="6.12.5"
+	KERNEL_REV="0~20241215.gec9141f"
 	wget -O /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	wget -O /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	echo "Install kernel linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1 source release"
@@ -620,7 +621,7 @@ if [ "$KERNEL" != "5.4" ]; then
 
 	if [ "$ID" = "debian" ]; then
 		echo "MPTCPize iperf3..."
-		mptcpize enable iperf3 >/dev/null 2>&1
+		mptcpize enable iperf3 >/dev/null 2>&1 || true
 	fi
 
 	#if [ "$UPSTREAM6" = "yes" ]; then
@@ -631,13 +632,15 @@ if [ "$KERNEL" != "5.4" ]; then
 	#fi
 fi
 
-apt-get -y remove shadowsocks-libev >/dev/null 2>&1
+echo "Remove Shadowsocks-libev..."
+apt-get -y remove shadowsocks-libev >/dev/null 2>&1 || true
 if [ "$SHADOWSOCKS" = "yes" ]; then
+	echo "Install Shadowsocks-libev..."
 	if [ "$SOURCES" = "yes" ]; then
 		#apt -t stretch-backports -y install shadowsocks-libev
 		## Compile Shadowsocks
 		#rm -rf /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}
-		#wget -O /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz http://github.com/shadowsocks/shadowsocks-libev/releases/download/v${SHADOWSOCKS_VERSION}/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz
+		#wget -O /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz http://hub.55860.com/shadowsocks/shadowsocks-libev/releases/download/v${SHADOWSOCKS_VERSION}/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz
 		cd /tmp
 		rm -rf shadowsocks-libev
 		git clone https://hub.55860.com/suyuan168/shadowsocks-libev.git
@@ -1235,7 +1238,7 @@ if [ "$XRAY" = "yes" ]; then
 	jq -M 'del(.users[0].openmptcprouter.xray)' /etc/openmptcprouter-vps-admin/omr-admin-config.json > /etc/openmptcprouter-vps-admin/omr-admin-config.json.new
 	mv -f /etc/openmptcprouter-vps-admin/omr-admin-config.json /etc/openmptcprouter-vps-admin/omr-admin-config.json.bak
 	mv -f /etc/openmptcprouter-vps-admin/omr-admin-config.json.new /etc/openmptcprouter-vps-admin/omr-admin-config.json
-	if [ ! -f /etc/xray/xray-server.json ] || [ -z "$(grep mptcp /etc/xray/xray-server.json | grep true)" ]; then
+	if [ ! -f /etc/xray/xray-server.json ] || [ -z "$(grep -i mptcp /etc/xray/xray-server.json | grep true)" ]; then
 		wget -O /etc/xray/xray-server.json ${VPSURL}${VPSPATH}/xray-server.json
 		sed -i "s:XRAY_UUID:$XRAY_UUID:g" /etc/xray/xray-server.json
 		sed -i "s:V2RAY_UUID:$XRAY_UUID:g" /etc/xray/xray-server.json
@@ -1252,7 +1255,8 @@ if [ "$XRAY" = "yes" ]; then
 		sed -i "s:XRAY_X25519_PUBLIC_KEY:$XRAY_X25519_PUBLIC_KEY:g" /etc/xray/xray-vless-reality.json
 		#for xrayuser in $(cat /etc/openmptcprouter-vps-admin/omr-admin-config.json | jq -r '.users[0][].username'); do
 		#	if [ "$xrayuser" != "admin" ] && [ "$xrayuser" != "openmptcprouter" ]; then
-		#		jq '. + {"level": 0, "alterId": 0, "email": $xrayuser,"id": $xrayid}' /etc/xray/xray-server.json > /etc/xray/xray-server.json.tmp
+		#		xrayid="$(/usr/bin/xray uuid)"
+		#		jq --arg xrayuser "$xrayuser" --arg xrayid "$xrayid"'. + {"level": 0, "alterId": 0, "email": $xrayuser,"id": $xrayid}' /etc/xray/xray-server.json > /etc/xray/xray-server.json.tmp
 		#		mv /etc/xray/xray-server.json.tmp /etc/xray/xray-server.json
 		#	fi
 		#done
