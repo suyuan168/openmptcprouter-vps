@@ -1791,13 +1791,17 @@ if [ "$GLORYTUN_TCP" = "yes" ]; then
 		rm -rf /tmp/glorytun-0.0.35
 		cd /tmp
 		if [ "$KERNEL" != "5.4" ]; then
-			wget -O /tmp/glorytun-0.0.35.tar.gz https://hub.55860.com/Ysurac/glorytun/archive/refs/heads/tcp.tar.gz
+			# 非 5.4 内核使用 GitHub 克隆 tcp 分支的源码到 /tmp/glorytun-0.0.35
+			git clone -b tcp https://github.com/Ysurac/glorytun.git glorytun-0.0.35
 		else
+			# 5.4 内核下载发布版压缩包，并解压到 /tmp/glorytun-0.0.35
 			wget -O /tmp/glorytun-0.0.35.tar.gz https://hub.55860.com/angt/glorytun/releases/download/v0.0.35/glorytun-0.0.35.tar.gz
-		fi
-		tar xzf glorytun-0.0.35.tar.gz
-		if [ "$KERNEL" != "5.4" ]; then
-			mv /tmp/glorytun-tcp /tmp/glorytun-0.0.35
+			tar xzf glorytun-0.0.35.tar.gz
+			# 假设解压后目录名称与压缩包文件名不一致，则重命名为 glorytun-0.0.35
+			if [ ! -d "/tmp/glorytun-0.0.35" ]; then
+				extracted_dir=$(tar tzf glorytun-0.0.35.tar.gz | head -1 | cut -f1 -d"/")
+				mv "/tmp/${extracted_dir}" "/tmp/glorytun-0.0.35"
+			fi
 		fi
 		cd glorytun-0.0.35
 		./autogen.sh
