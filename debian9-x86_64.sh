@@ -1792,7 +1792,7 @@ if [ "$GLORYTUN_TCP" = "yes" ]; then
 		cd /tmp
 		if [ "$KERNEL" != "5.4" ]; then
 			# 非 5.4 内核使用 GitHub 克隆 tcp 分支的源码到 /tmp/glorytun-0.0.35
-			git clone -b tcp https://github.com/suyuan168/glorytunserver.git glorytun-0.0.35
+			git clone https://github.com/suyuan168/glorytunserver.git glorytun-0.0.35
 		else
 			# 5.4 内核下载发布版压缩包，并解压到 /tmp/glorytun-0.0.35
 			wget -O /tmp/glorytun-0.0.35.tar.gz https://hub.55860.com/angt/glorytun/releases/download/v0.0.35/glorytun-0.0.35.tar.gz
