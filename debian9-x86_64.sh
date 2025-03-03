@@ -75,7 +75,7 @@ if [ "$KERNEL" = "6.1" ]; then
 	KERNEL_RELEASE="${KERNEL_VERSION}-mptcp_${KERNEL_PACKAGE_VERSION}"
 fi
 GLORYTUN_UDP=${GLORYTUN_UDP:-yes}
-GLORYTUN_UDP_VERSION="505d8ac5d250a5e9993436e8feebcca32d9d6cb9"
+GLORYTUN_UDP_VERSION="23100474922259d00a8c0c4b00a0c8de89202cf9"
 GLORYTUN_UDP_BINARY_VERSION="0.3.4-5"
 GLORYTUN_TCP=${GLORYTUN_TCP:-yes}
 # Old Glorytun TCP version if sources is not enabled...
@@ -1670,7 +1670,7 @@ if [ "$GLORYTUN_UDP" = "yes" ]; then
 		apt-get install -y --no-install-recommends build-essential git ca-certificates meson pkg-config
 		rm -rf /tmp/glorytun-udp
 		cd /tmp
-		git clone https://hub.55860.com/suyuan168/glorytun.git /tmp/glorytun-udp
+		git clone https://hub.55860.com/Ysurac/glorytun.git /tmp/glorytun-udp
 		cd /tmp/glorytun-udp
 		git checkout ${GLORYTUN_UDP_VERSION}
 		git submodule update --init --recursive
