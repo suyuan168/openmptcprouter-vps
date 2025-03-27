@@ -86,8 +86,8 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="7e98b32ebf549f87e9d20072acc80a87a562cb7d"
-OMR_ADMIN_BINARY_VERSION="0.14+20250220"
+OMR_ADMIN_VERSION="554916c0bcb74a30a5fa1300057719756b2bc14b"
+OMR_ADMIN_BINARY_VERSION="0.14+20250319"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
@@ -101,7 +101,7 @@ EASYRSA_VERSION="3.0.6"
 #fi
 IPROUTE2_VERSION="29da83f89f6e1fe528c59131a01f5d43bcd0a000"
 SHADOWSOCKS_BINARY_VERSION="3.3.5-3"
-SHADOWSOCKS_GO_VERSION="1.11.3"
+SHADOWSOCKS_GO_VERSION="1.13.0"
 DEFAULT_USER="openmptcprouter"
 VPS_DOMAIN=${VPS_DOMAIN:-$(wget -4 -qO- -T 2 http://hostname.openmptcprouter.com)}
 VPSPATH="server-test"
@@ -573,14 +573,14 @@ if [ "$IPERF" = "yes" ]; then
 	[ "$ARCH" = "amd64" ] && apt-get -y remove omr-iperf3 omr-libiperf0 >/dev/null 2>&1
 	if [ "$SOURCES" = "yes" ]; then
 		apt-get -y remove iperf3 libiperf0
-		apt-get -y install xz-utils devscripts
+		apt-get -y install xz-utils devscripts equivs
 		cd /tmp
 		rm -rf iperf-3.18
 		wget https://hub.55860.com/esnet/iperf/releases/download/3.18/iperf-3.18.tar.gz
 		tar xzf iperf-3.18.tar.gz
 		cd iperf-3.18
-		wget --waitretry=1 --read-timeout=20 --timeout=15 -t 5 --continue --no-dns-cache http://deb.debian.org/debian/pool/main/i/iperf3/iperf3_3.18-1.debian.tar.xz
-		tar xJf iperf3_3.18-1.debian.tar.xz
+		wget --waitretry=1 --read-timeout=20 --timeout=15 -t 5 --continue --no-dns-cache https://www.openmptcprouter.com/debian/iperf3_3.18-2.debian.tar.xz
+		tar xJf iperf3_3.18-2.debian.tar.xz
 		sleep 1
 		echo "Install iperf3 dependencies..."
 		rm -f /var/lib/dpkg/lock
@@ -594,7 +594,7 @@ if [ "$IPERF" = "yes" ]; then
 		rm -f /var/lib/dpkg/lock-frontend
 		cd /tmp
 		echo "Install iperf3 package..."
-		dpkg -i iperf3_3.18-1_amd64.deb libiperf0_3.18-1_amd64.deb >/dev/null 2>&1
+		dpkg -i iperf3_*.deb libiperf0_*.deb >/dev/null 2>&1
 		rm -rf iperf-3.18
 		rm -f iperf* libiperf*
 	else
@@ -1268,9 +1268,11 @@ if [ "$XRAY" = "yes" ]; then
 		#mv -f /etc/xray/xray-server.json.tmp /etc/xray/xray-server.json
 
 	fi
-	jq -M 'del(.users[0].openmptcprouter.xray)' /etc/openmptcprouter-vps-admin/omr-admin-config.json > /etc/openmptcprouter-vps-admin/omr-admin-config.json.new
-	mv -f /etc/openmptcprouter-vps-admin/omr-admin-config.json /etc/openmptcprouter-vps-admin/omr-admin-config.json.bak
-	mv -f /etc/openmptcprouter-vps-admin/omr-admin-config.json.new /etc/openmptcprouter-vps-admin/omr-admin-config.json
+	if [ -f /etc/openmptcprouter-vps-admin/omr-admin-config.json ]; then
+		jq -M 'del(.users[0].openmptcprouter.xray)' /etc/openmptcprouter-vps-admin/omr-admin-config.json > /etc/openmptcprouter-vps-admin/omr-admin-config.json.new
+		mv -f /etc/openmptcprouter-vps-admin/omr-admin-config.json /etc/openmptcprouter-vps-admin/omr-admin-config.json.bak
+		mv -f /etc/openmptcprouter-vps-admin/omr-admin-config.json.new /etc/openmptcprouter-vps-admin/omr-admin-config.json
+	fi
 	if [ ! -f /etc/xray/xray-server.json ] || [ -z "$(grep -i mptcp /etc/xray/xray-server.json | grep true)" ] || [ -z "$(grep -i transport /etc/xray/xray-server.json)" ]; then
 		wget -O /etc/xray/xray-server.json ${VPSURL}${VPSPATH}/xray-server.json
 		sed -i "s:XRAY_UUID:$XRAY_UUID:g" /etc/xray/xray-server.json
@@ -1639,6 +1641,10 @@ if [ "$OPENVPN" = "yes" ]; then
 	if [ ! -f /etc/openvpn/ccd/ipp_udp.txt ]; then
 		echo 'openmptcprouter,10.255.252.2,' > /etc/openvpn/ccd/ipp_udp.txt
 	fi
+	if [ "$ID" = "ubuntu" ]; then
+		# for old OpenVPN releases
+		sed -i 's/disable-dco//' /etc/openvpn/tun0.conf
+	fi
 	chmod 644 /lib/systemd/system/openvpn*.service
 	systemctl enable openvpn@tun0.service
 	systemctl enable openvpn@tun1.service
@@ -1957,6 +1963,10 @@ else
 		rm -rf ${DIR}/shorewall6
 		rm -f ${DIR}/openmptcprouter-shorewall.tar.gz
 		rm -f ${DIR}/openmptcprouter-shorewall6.tar.gz
+	fi
+	if [ -f  /etc/shorewall/params.vpn ]; then
+		awk '!seen[$0]++' /etc/shorewall/params.vpn > params.vpn.new
+		mv -f params.vpn.new params.vpn
 	fi
 fi
 [ -z "$(grep nf_conntrack_sip /etc/modprobe.d/blacklist.conf)" ] && echo 'blacklist nf_conntrack_sip' >> /etc/modprobe.d/blacklist.conf
