@@ -44,6 +44,9 @@ UBOND=${UBOND:-no}
 UBOND_PASS=${UBOND_PASS:-$(head -c 32 /dev/urandom | base64 -w0)}
 OPENVPN=${OPENVPN:-yes}
 OPENVPN_BONDING=${OPENVPN_BONDING:-yes}
+SOFTETHERVPN=${SOFTETHERVPN:-no}
+SOFTETHERVPN_PASS_ADMIN=${SOFTETHERVPN_PASS_ADMIN:-$(od -vN "16" -An -tx1 /dev/urandom | tr '[:lower:]' '[:upper:]' | tr -d " \n")}
+SOFTETHERVPN_PASS_USER=${SOFTETHERVPN_PASS_USER:-$(od -vN "16" -An -tx1 /dev/urandom | tr '[:lower:]' '[:upper:]' | tr -d " \n")}
 DSVPN=${DSVPN:-yes}
 WIREGUARD=${WIREGUARD:-yes}
 FAIL2BAN=${FAIL2BAN:-yes}
@@ -86,14 +89,14 @@ MLVPN_BINARY_VERSION="3.0.0+20211028.git.ddafba3"
 UBOND_VERSION="31af0f69ebb6d07ed9348dca2fced33b956cedee"
 OBFS_VERSION="master"
 OBFS_BINARY_VERSION="0.0.5-1"
-OMR_ADMIN_VERSION="dad9620d963ec432e170df856d4ca539a8956a13"
-OMR_ADMIN_BINARY_VERSION="0.15+20250717"
+OMR_ADMIN_VERSION="14387eac2a5f1dcece149d8207c2f57200906694"
+OMR_ADMIN_BINARY_VERSION="0.16+20250811_all"
 #OMR_ADMIN_BINARY_VERSION="0.3+20220827"
 DSVPN_VERSION="3b99d2ef6c02b2ef68b5784bec8adfdd55b29b1a"
 DSVPN_BINARY_VERSION="0.1.4-2"
 V2RAY_VERSION="5.32.0"
 V2RAY_PLUGIN_VERSION="4.43.0"
-XRAY_VERSION="25.6.8"
+XRAY_VERSION="25.8.3"
 EASYRSA_VERSION="3.2.2"
 #SHADOWSOCKS_VERSION="7407b214f335f0e2068a8622ef3674d868218e17"
 #if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
@@ -110,7 +113,7 @@ VPSURL="https://www.openmptcprouter.com/"
 REPO="repo.openmptcprouter.com"
 CHINA=${CHINA:-no}
 
-OMR_VERSION="0.1032-test"
+OMR_VERSION="0.1036-rolling-test"
 
 DIR=$( pwd )
 #"
@@ -136,8 +139,8 @@ if test -f /etc/os-release ; then
 else
 	. /usr/lib/os-release
 fi
-if [ "$ID" = "debian" ] && [ "$VERSION_ID" != "9" ] && [ "$VERSION_ID" != "10" ] && [ "$VERSION_ID" != "11" ] && [ "$VERSION_ID" != "12" ]; then
-	echo "This script only work with Debian Stretch (9.x), Debian Buster (10.x), Debian Bullseye (11.x) or Debian Bookworm (12.x)"
+if [ "$ID" = "debian" ] && [ "$VERSION_ID" != "9" ] && [ "$VERSION_ID" != "10" ] && [ "$VERSION_ID" != "11" ] && [ "$VERSION_ID" != "12" ] && [ "$VERSION_ID" != "13" ]; then
+	echo "This script only work with Debian Stretch (9.x), Debian Buster (10.x), Debian Bullseye (11.x), Debian Bookworm (12.x) or Debian Trixie (13.x)"
 	exit 1
 elif [ "$ID" = "ubuntu" ] && [ "$VERSION_ID" != "18.04" ] && [ "$VERSION_ID" != "19.04" ] && [ "$VERSION_ID" != "20.04" ] && [ "$VERSION_ID" != "22.04" ]; then
 	echo "This script only work with Ubuntu 18.04, 19.04, 20.04 or 22.04"
@@ -207,7 +210,7 @@ fi
 #	wget https://${REPO}/openmptcprouter.gpg.key -O /etc/apt/trusted.gpg.d/openmptcprouter.gpg
 #}
 
-CURRENT_OMR="$(grep -s 'OpenMPTCProuter VPS' /etc/* | awk '{print $4}')"
+CURRENT_OMR="$(grep -s 'OpenMPTCProuter VPS' /etc/* | awk '{print $4}' || true)"
 if [ "$REINSTALL" = "no" ] && [ "$CURRENT_OMR" = "$OMR_VERSION" ]; then
 	exit 1
 fi
@@ -215,7 +218,7 @@ fi
 # Force update key
 [ -f /etc/apt/sources.list.d/openmptcprouter.list ] && {
 	echo "Update ${REPO} key"
-	apt-key del '2FDF 70C8 228B 7F04 42FE  59F6 608F D17B 2B24 D936' >/dev/null 2>&1
+	apt-key del '2FDF 70C8 228B 7F04 42FE  59F6 608F D17B 2B24 D936' >/dev/null 2>&1 || true
 	if [ "$CHINA" = "yes" ]; then
 		#wget -O - https://gitee.com/ysurac/openmptcprouter-vps-debian/raw/main/openmptcprouter.gpg.key | apt-key add -
 		wget https://gitlab.com/ysurac/openmptcprouter-vps-debian/raw/main/openmptcprouter.gpg.key -O /etc/apt/trusted.gpg.d/openmptcprouter.gpg
@@ -282,6 +285,19 @@ if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "11" ] && [ "$UPDATE_OS" = "yes" ];
 	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades dist-upgrade
 	VERSION_ID="12"
 fi
+if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "12" ] && [ "$UPDATE_OS" = "yes" ] && false; then
+	echo "Update Debian 12 Bookworm to Debian 13 Trixie"
+	apt-get -y -f --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades upgrade
+	apt-get -y -f --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades dist-upgrade
+	sed -i 's:archive:deb:g' /etc/apt/sources.list
+	sed -i 's:bookworm:trixie:g' /etc/apt/sources.list
+	sed -i 's:archive:deb:g' /etc/apt/sources.list.d/debian.sources
+	sed -i 's:bookworm:trixie:g' /etc/apt/sources.list.d/debian.sources
+	apt-get update --allow-releaseinfo-change
+	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades upgrade
+	apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confnew" --allow-downgrades dist-upgrade
+	VERSION_ID="13"
+fi
 if [ "$ID" = "ubuntu" ] && [ "$VERSION_ID" = "18.04" ] && [ "$UPDATE_OS" = "yes" ]; then
 	echo "Update Ubuntu 18.04 to Ubuntu 20.04"
 	apt-get -y -f --force-yes --allow-downgrades upgrade
@@ -345,7 +361,7 @@ else
 		Pin: origin ${REPO}
 		Pin-Priority: 1001
 	EOF
-	if [ -n "$(echo $OMR_VERSION | grep test)" ]; then
+	if [ -n "$(echo $OMR_VERSION | grep test)" ] || [ -n "$(echo $OMR_VERSION | grep rolling)" ]; then
 		echo "deb [arch=amd64] https://${REPO} next main" > /etc/apt/sources.list.d/openmptcprouter-test.list
 #		cat <<-EOF | tee -a /etc/apt/preferences.d/openmptcprouter.pref
 #			Explanation: Prefer OpenMPTCProuter provided packages over the Debian native ones
@@ -356,7 +372,7 @@ else
 	else
 		rm -f /etc/apt/sources.list.d/openmptcprouter-test.list
 	fi
-	if [ "$ID" = "debian" ] && ([ "$VERSION_ID" = "11" ] || [ "$VERSION_ID" = "12" ]); then
+	if [ "$ID" = "debian" ] && ([ "$VERSION_ID" = "11" ] || [ "$VERSION_ID" = "12" ] || [ "$VERSION_ID" = "13" ]); then
 		cat <<-EOF | tee -a /etc/apt/preferences.d/openmptcprouter.pref
 			Explanation: Prefer libuv1 Debian native package
 			Package: libuv1
@@ -376,7 +392,7 @@ if [ "$ID" = "debian" ]; then
 	fi
 	# Add buster-backports repo
 	echo 'deb http://archive.debian.org/debian buster-backports main' > /etc/apt/sources.list.d/buster-backports.list
-	if [ "$VERSION_ID" = "12" ]; then
+	if [ "$VERSION_ID" = "12" ] || [ "$VERSION_ID" = "13" ]; then
 		echo 'deb http://deb.debian.org/debian bullseye main' > /etc/apt/sources.list.d/bullseye.list
 	fi
 elif [ "$ID" = "ubuntu" ]; then
@@ -391,7 +407,11 @@ fi
 echo "Install mptcp kernel and shadowsocks..."
 apt-get update --allow-releaseinfo-change
 sleep 2
-apt-get -y install dirmngr patch rename curl libcurl4 unzip pkg-config ipset
+if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "13" ]; then
+	apt-get -y install dirmngr patch rename curl unzip pkg-config ipset
+else
+	apt-get -y install dirmngr patch rename curl libcurl4 unzip pkg-config ipset
+fi
 
 if [ -z "$(dpkg-query -l | grep grub)" ]; then
 	if [ -d /boot/grub2 ]; then
@@ -531,8 +551,8 @@ elif [ "$KERNEL" = "6.12" ] && [ "$ARCH" = "amd64" ]; then
 	if [ "$PSABI" = "x64v4" ]; then
 		PSABI="x64v3"
 	fi
-	KERNEL_VERSION="6.12.37"
-	KERNEL_REV="0~20250710.g2eb0796"
+	KERNEL_VERSION="6.12.41"
+	KERNEL_REV="0~20250801.g8269fa8"
 	if [ "$CHINA" = "yes" ]; then
 		wget -O /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb https://sourceforge.net/projects/xanmod/files/releases/lts/${KERNEL_VERSION}-xanmod1/${KERNEL_VERSION}-${PSABI}-xanmod1/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 		wget -O /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb https://sourceforge.net/projects/xanmod/files/releases/lts/${KERNEL_VERSION}-xanmod1/${KERNEL_VERSION}-${PSABI}-xanmod1/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
@@ -643,7 +663,7 @@ if [ "$KERNEL" != "5.4" ]; then
 	make install
 	cd /tmp
 	rm -rf /tmp/mptcpize
-	if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "12" ]; then
+	if [ "$ID" = "debian" ] && ([ "$VERSION_ID" = "12" ] || [ "$VERSION_ID" = "13" ]); then
 		apt-get -y install iproute2
 	else
 		echo "Compile and install iproute2..."
@@ -733,7 +753,7 @@ if [ "$SHADOWSOCKS" = "yes" ]; then
 			if [ "$VERSION_ID" = "9" ]; then
 				apt -y -t stretch-backports install libsodium-dev
 			else
-				apt -y install libsodium-dev
+				apt -y install libsodium-dev || true
 			fi
 		elif [ "$ID" = "ubuntu" ]; then
 			rm -f /var/lib/dpkg/lock
@@ -743,10 +763,10 @@ if [ "$SHADOWSOCKS" = "yes" ]; then
 		#cd /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}
 		rm -f /var/lib/dpkg/lock
 		rm -f /var/lib/dpkg/lock-frontend
-		mk-build-deps --install --tool "apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends -y" >/dev/null 2>&1
+		mk-build-deps --install --tool "apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends -y" >/dev/null 2>&1 || true
 		rm -f /var/lib/dpkg/lock
 		rm -f /var/lib/dpkg/lock-frontend
-		dpkg-buildpackage -b -us -uc >/dev/null 2>&1
+		dpkg-buildpackage -b -us -uc >/dev/null 2>&1 || true
 		rm -f /var/lib/dpkg/lock
 		rm -f /var/lib/dpkg/lock-frontend
 		cd /tmp
@@ -854,8 +874,8 @@ if [ "$OMR_ADMIN" = "yes" ]; then
 		apt-get -y remove python3-jwt
 		pip3 -q install pyjwt
 	else
-		if [ "$ID" = "debian" ] && ([ "$VERSION_ID" = "10" ] || [ "$VERSION_ID" = "11" ] || [ "$VERSION_ID" = "12" ]); then
-			if [ "$VERSION_ID" = "12" ]; then
+		if [ "$ID" = "debian" ] && ([ "$VERSION_ID" = "10" ] || [ "$VERSION_ID" = "11" ] || [ "$VERSION_ID" = "12" ] || [ "$VERSION_ID" = "13" ]); then
+			if [ "$VERSION_ID" = "12" ] || [ "$VERSION_ID" = "13" ]; then
 				apt-get -y --allow-downgrades install python3-passlib python3-jwt python3-netaddr libuv1
 				pip3 -q install uvloop --break-system-packages
 			else
@@ -871,7 +891,9 @@ if [ "$OMR_ADMIN" = "yes" ]; then
 	echo "If you see any error here, I really don't care: it's about a module not used for home users"
 	#pip3 install pyjwt passlib uvicorn fastapi netjsonconfig python-multipart netaddr
 	#pip3 -q install fastapi netjsonconfig python-multipart uvicorn -U
-	if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "12" ]; then
+	if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "13" ]; then
+		apt-get -y install python3-jsonschema python3-fastapi python3-multipart python3-starlette
+	elif [ "$ID" = "debian" ] && [ "$VERSION_ID" = "12" ]; then
 		#pip3 -q install netjsonconfig --break-system-packages
 		pip3 -q install fastapi -U --break-system-packages
 		pip3 -q install jsonschema -U --break-system-packages
@@ -1721,9 +1743,9 @@ if [ "$GLORYTUN_UDP" = "yes" ]; then
 		git submodule update --init --recursive
 		meson build
 		ninja -C build install
-		sed -i 's:EmitDNS=yes:EmitDNS=no:g' /lib/systemd/network/glorytun.network
-		rm /lib/systemd/system/glorytun*
-		rm /lib/systemd/network/glorytun*
+		sed -i 's:EmitDNS=yes:EmitDNS=no:g' /lib/systemd/network/glorytun.network || true
+		rm -f /lib/systemd/system/glorytun*
+		rm -f /lib/systemd/network/glorytun*
 		if [ "$LOCALFILES" = "no" ]; then
 			wget -O /usr/local/bin/glorytun-udp-run ${VPSURL}${VPSPATH}/glorytun-udp-run
 		else
@@ -1854,6 +1876,12 @@ if [ "$GLORYTUN_TCP" = "yes" ]; then
 			mv /tmp/glorytun-tcp /tmp/glorytun-0.0.35
 		fi
 		cd glorytun-0.0.35
+		if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "13" ]; then
+			wget https://hub.55860.com/Ysurac/openmptcprouter-feeds/raw/refs/heads/develop/glorytun/patches/001-fix-compilation-errors-gcc14.patch
+			wget https://hub.55860.com/Ysurac/openmptcprouter-feeds/raw/refs/heads/develop/glorytun/patches/002-fix-crypto-aead-pointer-types.patch
+			patch -p1 < 001-fix-compilation-errors-gcc14.patch
+			patch -p1 < 002-fix-crypto-aead-pointer-types.patch
+		fi
 		./autogen.sh
 		./configure
 		make
@@ -1888,6 +1916,82 @@ if [ "$GLORYTUN_TCP" = "yes" ]; then
 	[ "$(ip -6 a)" != "" ] && sed -i 's/0.0.0.0/::/g' /etc/glorytun-tcp/tun0
 fi
 
+if [ "$SOFTETHERVPN" = "yes" ]; then
+	apt-get -y install softether-vpnserver
+	if [ "$KERNEL" != "5.4" ]; then
+		mptcpize enable softether-vpnserver >/dev/null 2>&1
+	fi
+	set +e
+	softether_test() {
+		# Check if SoftEther VPN is available...
+		result=1
+		while ! $($@ About >/dev/null 2>&1); do
+			sleep 1
+			echo -n '.'
+		done
+		echo "Server ready for configuration..."
+	}
+	softether_password=$(cat /etc/openmptcprouter-vps-admin/omr-admin-config.json | jq -r .softethervpn_admin_password | tr -d "\n")
+	#echo "softether : $softether_password"
+	if [ "$softether_password" = "null" ]; then
+		#echo "Generate pass..."
+		softether_password=$SOFTETHERVPN_PASS_ADMIN
+		softetherrun="vpncmd 127.0.0.1:443 /SERVER /CSV /CMD"
+		softether_test "$softetherrun"
+		$softetherrun ServerPasswordSet $softether_password
+		softetherdefault="vpncmd 127.0.0.1:443 /SERVER /CSV /PASSWORD:$softether_password"
+		jq --arg softether_password $softether_password '. + {softethervpn_admin_password: $softether_password}' /etc/openmptcprouter-vps-admin/omr-admin-config.json > /etc/openmptcprouter-vps-admin/omr-admin-config.json.tmp
+		mv -f /etc/openmptcprouter-vps-admin/omr-admin-config.json.tmp /etc/openmptcprouter-vps-admin/omr-admin-config.json
+	else
+		softetherdefault="vpncmd 127.0.0.1:65390 /SERVER /CSV /PASSWORD:$softether_password"
+	fi
+
+	softherether_user_name=$DEFAULT_USER
+	softether_user_password=$(cat /etc/openmptcprouter-vps-admin/omr-admin-config.json | jq -r .users[0].openmptcprouter.softethervpn | tr -d "\n")
+	#echo "softether user : $softether_user_password"
+	if [ "$softether_user_password" = "null" ]; then
+		#echo "Generate user password"
+		softether_user_password=$SOFTETHERVPN_PASS_USER
+		jq --arg softether_user_password $softether_user_password '(.users[0].openmptcprouter) += {softethervpn: $softether_user_password}' /etc/openmptcprouter-vps-admin/omr-admin-config.json > /etc/openmptcprouter-vps-admin/omr-admin-config.json.tmp
+		mv -f /etc/openmptcprouter-vps-admin/omr-admin-config.json.tmp /etc/openmptcprouter-vps-admin/omr-admin-config.json
+	fi
+
+	softetherrun="$softetherdefault /CMD"
+	softetherhubrun="$softetherdefault /HUB:OMRVPN /CMD"
+	softether_test "$softetherrun"
+
+	#echo "$softetherrun ServerPasswordSet $softether_password"
+	$softetherrun ServerPasswordSet "$softether_password"
+	#echo "$softetherrun HubCreate OMRVPN"
+	$softetherrun HubCreate OMRVPN /PASSWORD:"$softether_password"
+	#echo "$softetherrun HubDelete DEFAULT"
+	$softetherrun HubDelete DEFAULT
+	#echo "$softetherrun BridgeCreate OMRVPN /DEVICE:softether /TAP:yes"
+	$softetherrun BridgeCreate OMRVPN /DEVICE:softether /TAP:yes
+	#echo "$softetherhubrun DHCPSet OMRVPN /START:10.255.210.2 /END:10.255.210.254 /MASK:255.255.255.0 /EXPIRE:7200 /GW:10.255.210.1 /DNS:none /DNS2:none /DOMAIN:none /LOG:yes"
+	$softetherhubrun DHCPSet /START:10.255.210.2 /END:10.255.210.254 /MASK:255.255.255.0 /EXPIRE:7200 /GW:10.255.210.1 /DNS:none /DNS2:none /DOMAIN:none /LOG:yes
+	#echo "$softetherhubrun DHCPSet OMRVPN DhcpEnable"
+	$softetherhubrun DhcpEnable
+	#echo "$softetherhubrun SecureNatEnable OMRVPN"
+	$softetherhubrun SecureNatEnable
+	#echo "$softetherhubrun NatEnable OMRVPN"
+	$softetherhubrun NatEnable
+	#echo "$softetherhubrun UserCreate ${softherether_user_name} /GROUP:none /REALNAME:none /NOTE:none"
+	$softetherhubrun UserCreate ${softherether_user_name} /GROUP:none /REALNAME:none /NOTE:none
+	#echo "$softetherhubrun UserPasswordSet ${softherether_user_name} /PASSWORD:${softether_user_password}"
+	$softetherhubrun UserPasswordSet ${softherether_user_name} /PASSWORD:${softether_user_password}
+	#echo "$softetherhubrun ListenerCreate OMRVPN 65390"
+	$softetherrun ListenerCreate 65390
+	$softetherrun ListenerEnable 65390
+	softetherdefault="vpncmd 127.0.0.1:65390 /SERVER /CSV /PASSWORD:$softether_password"
+	softetherhubrun="$softetherdefault /HUB:OMRVPN /CMD"
+	$softetherrun ListenerDisable 443
+	$softetherrun ListenerDisable 992
+	$softetherrun ListenerDisable 1194
+	$softetherrun ListenerDisable 5555
+	$softetherrun PortsUDPSet 0
+	set -e
+fi
 
 # Load tun module at boot time
 if ! grep -q tun /etc/modules ; then
