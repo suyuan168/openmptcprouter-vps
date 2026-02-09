@@ -29,6 +29,7 @@ V2RAY_UUID=${V2RAY_UUID:-$(cat /proc/sys/kernel/random/uuid | tr -d "\n")}
 XRAY=${XRAY:-yes}
 XRAY_UUID=${XRAY_UUID:-$V2RAY_UUID}
 SHADOWSOCKS=${SHADOWSOCKS:-yes}
+SHADOWSOCKS_FORCE_SOURCE=${SHADOWSOCKS_FORCE_SOURCE:-yes}
 SHADOWSOCKS_GO=${SHADOWSOCKS_GO:-yes}
 PSK=${PSK:-$(head -c 32 /dev/urandom | base64 -w0)}
 UPSK=${UPSK:-$(head -c 32 /dev/urandom | base64 -w0)}
@@ -101,12 +102,10 @@ V2RAY_VERSION="5.32.0"
 V2RAY_PLUGIN_VERSION="4.43.0"
 XRAY_VERSION="26.2.4"
 EASYRSA_VERSION="3.2.2"
-#SHADOWSOCKS_VERSION="7407b214f335f0e2068a8622ef3674d868218e17"
-#if [ "$UPSTREAM" = "yes" ] || [ "$UPSTREAM6" = "yes" ]; then
-	SHADOWSOCKS_VERSION="master"
-#fi
+# Keep server/client aligned with feed update (official shadowsocks-libev 3.3.6)
+SHADOWSOCKS_VERSION="c5e8788013a37afe54ea1c2b7c03395cccc663cf"
 IPROUTE2_VERSION="29da83f89f6e1fe528c59131a01f5d43bcd0a000"
-SHADOWSOCKS_BINARY_VERSION="3.3.5-3"
+SHADOWSOCKS_BINARY_VERSION="3.3.6-1"
 SHADOWSOCKS_GO_VERSION="1.14.0"
 DEFAULT_USER="openmptcprouter"
 VPS_DOMAIN=${VPS_DOMAIN:-$(wget -4 -qO- -T 2 http://hostname.openmptcprouter.com)}
@@ -758,7 +757,7 @@ echo "Remove Shadowsocks-libev..."
 apt-get -y remove shadowsocks-libev >/dev/null 2>&1 || true
 if [ "$SHADOWSOCKS" = "yes" ]; then
 	echo "Install Shadowsocks-libev..."
-	if [ "$SOURCES" = "yes" ] || [ "$ARCH" != "amd64" ]; then
+	if [ "$SHADOWSOCKS_FORCE_SOURCE" = "yes" ] || [ "$SOURCES" = "yes" ] || [ "$ARCH" != "amd64" ]; then
 		apt-get -y install git
 		#apt -t stretch-backports -y install shadowsocks-libev
 		## Compile Shadowsocks
@@ -766,7 +765,7 @@ if [ "$SHADOWSOCKS" = "yes" ]; then
 		#wget -O /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz http://hub.55860.com/shadowsocks/shadowsocks-libev/releases/download/v${SHADOWSOCKS_VERSION}/shadowsocks-libev-${SHADOWSOCKS_VERSION}.tar.gz
 		cd /tmp
 		rm -rf shadowsocks-libev
-		git clone https://hub.55860.com/suyuan168/shadowsocks-libev.git
+		git clone https://hub.55860.com/shadowsocks/shadowsocks-libev.git
 		cd shadowsocks-libev
 		git checkout ${SHADOWSOCKS_VERSION}
 		git submodule update --init --recursive
@@ -803,7 +802,7 @@ if [ "$SHADOWSOCKS" = "yes" ]; then
 		#rm -rf /tmp/libbpf
 		rm -f /var/lib/dpkg/lock
 		rm -f /var/lib/dpkg/lock-frontend
-		apt-get -y install --no-install-recommends devscripts equivs apg libcap2-bin libpam-cap libc-ares2 libc-ares-dev libev4 haveged libpcre3-dev || true
+		apt-get -y install --no-install-recommends devscripts equivs apg libcap2-bin libpam-cap libc-ares2 libc-ares-dev libev4 haveged libpcre2-dev libpcre3-dev || true
 		apt-get -y install --no-install-recommends asciidoc-base asciidoc-common docbook-xml docbook-xsl libev-dev libmbedcrypto3 libmbedtls-dev libmbedtls12 libmbedx509-0 libxml2-utils libxslt1.1 pkg-config sgml-base sgml-data xml-core xmlto xsltproc || true
 		sleep 1
 		rm -f /var/lib/dpkg/lock
@@ -832,15 +831,16 @@ if [ "$SHADOWSOCKS" = "yes" ]; then
 		rm -f /var/lib/dpkg/lock
 		rm -f /var/lib/dpkg/lock-frontend
 		cd /tmp
-		#dpkg -i shadowsocks-libev_*.deb
-		dpkg -i omr-shadowsocks-libev_*.deb >/dev/null 2>&1 || true
+		# Official source builds standard Debian package names.
+		dpkg -i ./*shadowsocks-libev*.deb >/dev/null 2>&1 || dpkg -i omr-shadowsocks-libev_*.deb >/dev/null 2>&1 || true
 		#mkdir -p /usr/lib/shadowsocks-libev
 		#cp -f /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}/src/*.ebpf /usr/lib/shadowsocks-libev
 		#rm -rf /tmp/shadowsocks-libev-${SHADOWSOCKS_VERSION}
 		rm -rf /tmp/shadowsocks-libev
 	else
 		apt-get -y install haveged >/dev/null 2>&1 || true
-		apt-get -y -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-overwrite" install omr-shadowsocks-libev=${SHADOWSOCKS_BINARY_VERSION}
+		apt-get -y -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-overwrite" install omr-shadowsocks-libev=${SHADOWSOCKS_BINARY_VERSION} || \
+			apt-get -y -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-overwrite" install shadowsocks-libev || true
 	fi
 fi
 
