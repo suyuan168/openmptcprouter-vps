@@ -1,0 +1,5 @@
+This directory holds pre-downloaded source archives and binaries.
+Run `./prep-download.sh` to populate this directory before installation.
+
+When LOCALFILES=yes, the install script will use files from this directory
+instead of downloading from the internet.
