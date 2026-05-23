@@ -223,7 +223,13 @@ fi
 [ -f /etc/apt/sources.list.d/openmptcprouter.list ] && {
 	echo "Update ${REPO} key"
 	apt-key del '2FDF 70C8 228B 7F04 42FE  59F6 608F D17B 2B24 D936' >/dev/null 2>&1 || true
-	wget https://${REPO}/openmptcprouter.gpg.key -O /etc/apt/trusted.gpg.d/openmptcprouter.gpg
+	if [ "$CHINA" = "yes" ]; then
+		#wget -O - https://gitee.com/ysurac/openmptcprouter-vps-debian/raw/main/openmptcprouter.gpg.key | apt-key add -
+		wget https://gitlab.com/ysurac/openmptcprouter-vps-debian/raw/main/openmptcprouter.gpg.key -O /etc/apt/trusted.gpg.d/openmptcprouter.gpg
+	else
+		#wget -O - https://${REPO}/openmptcprouter.gpg.key | apt-key add -
+		wget https://${REPO}/openmptcprouter.gpg.key -O /etc/apt/trusted.gpg.d/openmptcprouter.gpg
+	fi
 }
 
 echo "Remove lock and update packages list..."
@@ -339,44 +345,78 @@ fi
 # Add OpenMPTCProuter repo
 echo "Add OpenMPTCProuter repo..."
 if [ "$CHINA" = "yes" ]; then
-	echo "CHINA mode: using pre-built packages, no GitHub required"
-	SOURCES="no"
-	SHADOWSOCKS_FORCE_SOURCE="no"
+	echo "Install git..."
+	apt-get -y install git
+	rm -rf /var/lib/openmptcprouter-vps-debian 
+	if [ ! -d /var/lib/openmptcprouter-vps-debian ]; then
+		#git clone https://gitee.com/ysurac/openmptcprouter-vps-debian.git /var/lib/openmptcprouter-vps-debian
+		git clone https://gitlab.com/ysurac/openmptcprouter-vps-debian.git /var/lib/openmptcprouter-vps-debian
+	fi
+	cd /var/lib/openmptcprouter-vps-debian
+	git pull
+#	if [ "$VPSPATH" = "server-test" ]; then
+#		git checkout develop
+#	else
+#		git checkout main
+#	fi
+	echo "deb [arch=amd64] file:/var/lib/openmptcprouter-vps-debian ./" > /etc/apt/sources.list.d/openmptcprouter.list
+	cat /var/lib/openmptcprouter-vps-debian/openmptcprouter.gpg.key | apt-key add -
+	rm -rf /usr/share/omr-server-git
+	if [ ! -d /usr/share/omr-server-git ]; then
+		#git clone https://gitee.com/ysurac/openmptcprouter-vps.git /usr/share/omr-server-git
+		git clone https://gitlab.com/ysurac/openmptcprouter-vps.git /usr/share/omr-server-git
+	fi
+	cd /usr/share/omr-server-git
+	git pull
+	if [ "$VPSPATH" = "server-test" ]; then
+		git checkout develop
+	else
+		git checkout master
+	fi
+	LOCALFILES="yes"
 	TLS="no"
-	UBOND="no"
-fi
-echo "deb [arch=amd64] https://${REPO} buster main" > /etc/apt/sources.list.d/openmptcprouter.list
-if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "13" ]; then
-	cat <<-EOF | tee /etc/apt/preferences.d/openmptcprouter.pref
-		Explanation: Prefer OpenMPTCProuter provided packages over the Debian native ones
-		Package: *
-		Pin: release o=${REPO}
-		Pin-Priority: 999
-
-	EOF
+	DIR="/usr/share/omr-server-git"
 else
-	cat <<-EOF | tee /etc/apt/preferences.d/openmptcprouter.pref
-		Explanation: Prefer OpenMPTCProuter provided packages over the Debian native ones
-		Package: *
-		Pin: release o=${REPO}
-		Pin-Priority: 400
-
-	EOF
+	echo "deb [arch=amd64] https://${REPO} buster main" > /etc/apt/sources.list.d/openmptcprouter.list
+	if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "13" ]; then
+		cat <<-EOF | tee /etc/apt/preferences.d/openmptcprouter.pref
+			Explanation: Prefer OpenMPTCProuter provided packages over the Debian native ones
+			Package: *
+			Pin: release o=${REPO}
+			Pin-Priority: 999
+			
+		EOF
+	else
+		cat <<-EOF | tee /etc/apt/preferences.d/openmptcprouter.pref
+			Explanation: Prefer OpenMPTCProuter provided packages over the Debian native ones
+			Package: *
+			Pin: release o=${REPO}
+			Pin-Priority: 400
+			
+		EOF
+	fi
+	if [ -n "$(echo $OMR_VERSION | grep test)" ] || [ -n "$(echo $OMR_VERSION | grep rolling)" ]; then
+		echo "deb [arch=amd64] https://${REPO} next main" > /etc/apt/sources.list.d/openmptcprouter-test.list
+#		cat <<-EOF | tee -a /etc/apt/preferences.d/openmptcprouter.pref
+#			Explanation: Prefer OpenMPTCProuter provided packages over the Debian native ones
+#			Package: *
+#			Pin: origin ${REPO}
+#			Pin-Priority: 1002
+#		EOF
+	else
+		rm -f /etc/apt/sources.list.d/openmptcprouter-test.list
+	fi
+	if [ "$ID" = "debian" ] && ([ "$VERSION_ID" = "11" ] || [ "$VERSION_ID" = "12" ] || [ "$VERSION_ID" = "13" ]); then
+		cat <<-EOF | tee -a /etc/apt/preferences.d/openmptcprouter.pref
+			Explanation: Prefer libuv1 Debian native package
+			Package: libuv1
+			Pin: version *
+			Pin-Priority: 1003
+		EOF
+	fi
+	#wget -O - https://${REPO}/openmptcprouter.gpg.key | apt-key add -
+	wget https://${REPO}/openmptcprouter.gpg.key -O /etc/apt/trusted.gpg.d/openmptcprouter.gpg
 fi
-if [ -n "$(echo $OMR_VERSION | grep test)" ] || [ -n "$(echo $OMR_VERSION | grep rolling)" ]; then
-	echo "deb [arch=amd64] https://${REPO} next main" > /etc/apt/sources.list.d/openmptcprouter-test.list
-else
-	rm -f /etc/apt/sources.list.d/openmptcprouter-test.list
-fi
-if [ "$ID" = "debian" ] && ([ "$VERSION_ID" = "11" ] || [ "$VERSION_ID" = "12" ] || [ "$VERSION_ID" = "13" ]); then
-	cat <<-EOF | tee -a /etc/apt/preferences.d/openmptcprouter.pref
-		Explanation: Prefer libuv1 Debian native package
-		Package: libuv1
-		Pin: version *
-		Pin-Priority: 1003
-	EOF
-fi
-wget https://${REPO}/openmptcprouter.gpg.key -O /etc/apt/trusted.gpg.d/openmptcprouter.gpg
 
 #apt-key adv --keyserver hkp://keys.gnupg.net --recv-keys 379CE192D401AB61
 if [ "$ID" = "debian" ]; then
@@ -457,13 +497,8 @@ set_grub_default_kernel() {
 #"
 if [ "$KERNEL" = "5.4" ] || [ "$KERNEL" = "5.15" ]; then
 	if [ "$SOURCES" = "yes" ]; then
-		if [ -f "${DIR}/sources/kernel/linux-image-${KERNEL_RELEASE}_amd64.deb" ]; then
-			cp "${DIR}/sources/kernel/linux-image-${KERNEL_RELEASE}_amd64.deb" /tmp/
-			cp "${DIR}/sources/kernel/linux-headers-${KERNEL_RELEASE}_amd64.deb" /tmp/
-		else
-			wget -O /tmp/linux-image-${KERNEL_RELEASE}_amd64.deb ${VPSURL}kernel/linux-image-${KERNEL_RELEASE}_amd64.deb
-			wget -O /tmp/linux-headers-${KERNEL_RELEASE}_amd64.deb ${VPSURL}kernel/linux-headers-${KERNEL_RELEASE}_amd64.deb
-		fi
+		wget -O /tmp/linux-image-${KERNEL_RELEASE}_amd64.deb ${VPSURL}kernel/linux-image-${KERNEL_RELEASE}_amd64.deb
+		wget -O /tmp/linux-headers-${KERNEL_RELEASE}_amd64.deb ${VPSURL}kernel/linux-headers-${KERNEL_RELEASE}_amd64.deb
 		# Rename bzImage to vmlinuz, needed when custom kernel was used
 		cd /boot
 		apt-get -y install git
@@ -507,16 +542,8 @@ elif [ "$KERNEL" = "6.6" ] && [ "$ARCH" = "amd64" ]; then
 	#'
 	KERNEL_VERSION="6.6.36"
 	KERNEL_REV="0~20240628.g36640c1"
-	KERNEL_IMG_NAME="linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb"
-	KERNEL_HDR_NAME="linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb"
-	if [ -f "${DIR}/sources/kernel/${KERNEL_IMG_NAME}" ]; then
-		echo "Using local kernel from sources/"
-		cp "${DIR}/sources/kernel/${KERNEL_IMG_NAME}" /tmp/${KERNEL_IMG_NAME}
-		cp "${DIR}/sources/kernel/${KERNEL_HDR_NAME}" /tmp/${KERNEL_HDR_NAME}
-	else
-		wget -O /tmp/${KERNEL_IMG_NAME} ${VPSURL}kernel/${KERNEL_IMG_NAME}
-		wget -O /tmp/${KERNEL_HDR_NAME} ${VPSURL}kernel/${KERNEL_HDR_NAME}
-	fi
+	wget -O /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+	wget -O /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	echo "Install kernel linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1 source release"
 	dpkg --force-all -i -B /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	dpkg --force-all -i -B /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
@@ -539,16 +566,8 @@ elif [ "$KERNEL" = "6.10" ] && [ "$ARCH" = "amd64" ]; then
 	fi
 	KERNEL_VERSION="6.10.2"
 	KERNEL_REV="0~20240728.gae7b555"
-	KERNEL_IMG_NAME="linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb"
-	KERNEL_HDR_NAME="linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb"
-	if [ -f "${DIR}/sources/kernel/${KERNEL_IMG_NAME}" ]; then
-		echo "Using local kernel from sources/"
-		cp "${DIR}/sources/kernel/${KERNEL_IMG_NAME}" /tmp/${KERNEL_IMG_NAME}
-		cp "${DIR}/sources/kernel/${KERNEL_HDR_NAME}" /tmp/${KERNEL_HDR_NAME}
-	else
-		wget -O /tmp/${KERNEL_IMG_NAME} ${VPSURL}kernel/${KERNEL_IMG_NAME}
-		wget -O /tmp/${KERNEL_HDR_NAME} ${VPSURL}kernel/${KERNEL_HDR_NAME}
-	fi
+	wget -O /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+	wget -O /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	echo "Install kernel linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1 source release"
 	dpkg --force-all -i -B /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	dpkg --force-all -i -B /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
@@ -571,16 +590,8 @@ elif [ "$KERNEL" = "6.11" ] && [ "$ARCH" = "amd64" ]; then
 	fi
 	KERNEL_VERSION="6.11.0"
 	KERNEL_REV="0~20240916.g9c60408"
-	KERNEL_IMG_NAME="linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb"
-	KERNEL_HDR_NAME="linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb"
-	if [ -f "${DIR}/sources/kernel/${KERNEL_IMG_NAME}" ]; then
-		echo "Using local kernel from sources/"
-		cp "${DIR}/sources/kernel/${KERNEL_IMG_NAME}" /tmp/${KERNEL_IMG_NAME}
-		cp "${DIR}/sources/kernel/${KERNEL_HDR_NAME}" /tmp/${KERNEL_HDR_NAME}
-	else
-		wget -O /tmp/${KERNEL_IMG_NAME} ${VPSURL}kernel/${KERNEL_IMG_NAME}
-		wget -O /tmp/${KERNEL_HDR_NAME} ${VPSURL}kernel/${KERNEL_HDR_NAME}
-	fi
+	wget -O /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+	wget -O /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	echo "Install kernel linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1 source release"
 	dpkg --force-all -i -B /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	dpkg --force-all -i -B /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
@@ -602,18 +613,12 @@ elif [ "$KERNEL" = "6.12" ] && [ "$ARCH" = "amd64" ]; then
 	fi
 	KERNEL_VERSION="6.12.67"
 	KERNEL_REV="0~20260123.ga077982"
-	KERNEL_IMG_NAME="linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb"
-	KERNEL_HDR_NAME="linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb"
-	if [ -f "${DIR}/sources/kernel/${KERNEL_IMG_NAME}" ]; then
-		echo "Using local kernel from sources/"
-		cp "${DIR}/sources/kernel/${KERNEL_IMG_NAME}" /tmp/${KERNEL_IMG_NAME}
-		cp "${DIR}/sources/kernel/${KERNEL_HDR_NAME}" /tmp/${KERNEL_HDR_NAME}
-	elif [ "$CHINA" = "yes" ]; then
-		wget -O /tmp/${KERNEL_IMG_NAME} https://sourceforge.net/projects/xanmod/files/releases/lts/${KERNEL_VERSION}-xanmod1/${KERNEL_VERSION}-${PSABI}-xanmod1/${KERNEL_IMG_NAME}
-		wget -O /tmp/${KERNEL_HDR_NAME} https://sourceforge.net/projects/xanmod/files/releases/lts/${KERNEL_VERSION}-xanmod1/${KERNEL_VERSION}-${PSABI}-xanmod1/${KERNEL_HDR_NAME}
+	if [ "$CHINA" = "yes" ]; then
+		wget -O /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb https://sourceforge.net/projects/xanmod/files/releases/lts/${KERNEL_VERSION}-xanmod1/${KERNEL_VERSION}-${PSABI}-xanmod1/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+		wget -O /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb https://sourceforge.net/projects/xanmod/files/releases/lts/${KERNEL_VERSION}-xanmod1/${KERNEL_VERSION}-${PSABI}-xanmod1/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	else
-		wget -O /tmp/${KERNEL_IMG_NAME} ${VPSURL}kernel/${KERNEL_IMG_NAME}
-		wget -O /tmp/${KERNEL_HDR_NAME} ${VPSURL}kernel/${KERNEL_HDR_NAME}
+		wget -O /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+		wget -O /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	fi
 	echo "Install kernel linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1 source release"
 	dpkg --force-all -i -B /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
@@ -641,18 +646,12 @@ elif [ "$KERNEL" = "6.18" ] && [ "$ARCH" = "amd64" ]; then
 	fi
 	KERNEL_VERSION="6.18.6"
 	KERNEL_REV="0~20260119.g84d30e6"
-	KERNEL_IMG_NAME="linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb"
-	KERNEL_HDR_NAME="linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb"
-	if [ -f "${DIR}/sources/kernel/${KERNEL_IMG_NAME}" ]; then
-		echo "Using local kernel from sources/"
-		cp "${DIR}/sources/kernel/${KERNEL_IMG_NAME}" /tmp/${KERNEL_IMG_NAME}
-		cp "${DIR}/sources/kernel/${KERNEL_HDR_NAME}" /tmp/${KERNEL_HDR_NAME}
-	elif [ "$CHINA" = "yes" ]; then
-		wget -O /tmp/${KERNEL_IMG_NAME} https://sourceforge.net/projects/xanmod/files/releases/lts/${KERNEL_VERSION}-xanmod1/${KERNEL_VERSION}-${PSABI}-xanmod1/${KERNEL_IMG_NAME}
-		wget -O /tmp/${KERNEL_HDR_NAME} https://sourceforge.net/projects/xanmod/files/releases/lts/${KERNEL_VERSION}-xanmod1/${KERNEL_VERSION}-${PSABI}-xanmod1/${KERNEL_HDR_NAME}
+	if [ "$CHINA" = "yes" ]; then
+		wget -O /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb https://sourceforge.net/projects/xanmod/files/releases/lts/${KERNEL_VERSION}-xanmod1/${KERNEL_VERSION}-${PSABI}-xanmod1/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+		wget -O /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb https://sourceforge.net/projects/xanmod/files/releases/lts/${KERNEL_VERSION}-xanmod1/${KERNEL_VERSION}-${PSABI}-xanmod1/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	else
-		wget -O /tmp/${KERNEL_IMG_NAME} ${VPSURL}kernel/${KERNEL_IMG_NAME}
-		wget -O /tmp/${KERNEL_HDR_NAME} ${VPSURL}kernel/${KERNEL_HDR_NAME}
+		wget -O /tmp/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
+		wget -O /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb ${VPSURL}kernel/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
 	fi
 	echo "Install kernel linux-image-${KERNEL_VERSION}-${PSABI}-xanmod1 source release"
 	dpkg --force-all -i -B /tmp/linux-headers-${KERNEL_VERSION}-${PSABI}-xanmod1_${KERNEL_VERSION}-${PSABI}-xanmod1-${KERNEL_REV}_amd64.deb
@@ -693,7 +692,7 @@ fi
 
 if [ "$ARCH" = "amd64" ]; then
 	echo "Install tracebox OpenMPTCProuter edition"
-	apt-get -y -o Dpkg::Options::="--force-overwrite" install tracebox || true
+	apt-get -y -o Dpkg::Options::="--force-overwrite" install tracebox
 fi
 if [ "$IPERF" = "yes" ] && [ "$CHINA" != "yes" ]; then
 	#echo "Install iperf3 OpenMPTCProuter edition"
@@ -764,15 +763,12 @@ rm -f /var/lib/dpkg/lock-frontend
 if [ "$KERNEL" != "5.4" ]; then
 	if [ "$ID" = "debian" ] && ([ "$VERSION_ID" = "12" ] || [ "$VERSION_ID" = "13" ]); then
 		apt-get -y install mptcpize
-	elif [ "$CHINA" = "yes" ]; then
-		apt-get -y install mptcpize || echo "mptcpize not available, skipping"
 	else
 		echo "Compile and install mptcpize..."
 		apt-get -y install --no-install-recommends build-essential
 		cd /tmp
 		rm -rf mptcpize
 		if [ -f "${DIR}/sources/mptcpize.tar.gz" ]; then
-			echo "Using local mptcpize source"
 			tar xzf "${DIR}/sources/mptcpize.tar.gz" -C /tmp
 			mv /tmp/prep-mptcpize /tmp/mptcpize
 		else
@@ -787,8 +783,6 @@ if [ "$KERNEL" != "5.4" ]; then
 	fi
 	if [ "$ID" = "debian" ] && ([ "$VERSION_ID" = "12" ] || [ "$VERSION_ID" = "13" ]); then
 		apt-get -y install iproute2
-	elif [ "$CHINA" = "yes" ]; then
-		apt-get -y install iproute2 || echo "iproute2 not available from apt, skipping"
 	else
 		echo "Compile and install iproute2..."
 		apt-get -y install --no-install-recommends bison libbison-dev flex
@@ -796,11 +790,11 @@ if [ "$KERNEL" != "5.4" ]; then
 		#tar xzf iproute2-5.16.0.tar.gz
 		#cd iproute2-5.16.0
 		if [ -f "${DIR}/sources/iproute2.tar.gz" ]; then
-			echo "Using local iproute2 source"
+			rm -rf iproute2
 			tar xzf "${DIR}/sources/iproute2.tar.gz" -C /tmp
 			mv /tmp/prep-iproute2 /tmp/iproute2
 		else
-			git clone git://git.kernel.org/pub/scm/network/iproute2/iproute2.git
+			git clone git://git.kernel.org/pub/scm/network/iproute2/iproute2.git 
 		fi
 		cd iproute2
 		git checkout 29da83f89f6e1fe528c59131a01f5d43bcd0a000
@@ -836,7 +830,6 @@ if [ "$SHADOWSOCKS" = "yes" ]; then
 		cd /tmp
 		rm -rf shadowsocks-libev
 		if [ -f "${DIR}/sources/shadowsocks-libev.tar.gz" ]; then
-			echo "Using local shadowsocks-libev source"
 			tar xzf "${DIR}/sources/shadowsocks-libev.tar.gz" -C /tmp
 			mv /tmp/prep-shadowsocks-libev /tmp/shadowsocks-libev
 		else
@@ -988,11 +981,7 @@ if [ "$OMR_ADMIN" = "yes" ]; then
 		#apt-get -y -t buster install python3-pip python3-setuptools python3-wheel
 		if [ "$(whereis python3 | grep python3.7)" = "" ]; then
 			apt-get -y install libffi-dev build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev wget
-			if [ -f "${DIR}/sources/Python-3.7.2.tgz" ]; then
-				cp "${DIR}/sources/Python-3.7.2.tgz" /tmp/Python-3.7.2.tgz
-			else
-				wget -O /tmp/Python-3.7.2.tgz https://www.python.org/ftp/python/3.7.2/Python-3.7.2.tgz
-			fi
+			wget -O /tmp/Python-3.7.2.tgz https://www.python.org/ftp/python/3.7.2/Python-3.7.2.tgz
 			cd /tmp
 			tar xzf Python-3.7.2.tgz
 			cd Python-3.7.2
@@ -1256,7 +1245,7 @@ if [ "$OBFS" = "yes" ]; then
 			apt-get install -y --no-install-recommends build-essential autoconf libtool libssl-dev libpcre3-dev libev-dev asciidoc xmlto automake git ca-certificates
 		fi
 		if [ -f "${DIR}/sources/simple-obfs.tar.gz" ]; then
-			echo "Using local simple-obfs source"
+			rm -rf /tmp/simple-obfs
 			tar xzf "${DIR}/sources/simple-obfs.tar.gz" -C /tmp
 			mv /tmp/prep-simple-obfs /tmp/simple-obfs
 		else
@@ -1343,12 +1332,7 @@ if [ "$SHADOWSOCKS_GO" = "yes" ]; then
 			rm -f /tmp/shadowsocks-go-${SHADOWSOCKS_GO_VERSION}-arm64.deb
 		fi
 	else
-		if [ -f "${DIR}/sources/shadowsocks-go-${SHADOWSOCKS_GO_VERSION}-amd64.deb" ]; then
-			echo "Using local shadowsocks-go deb"
-			dpkg --force-all -i -B "${DIR}/sources/shadowsocks-go-${SHADOWSOCKS_GO_VERSION}-amd64.deb"
-		else
-			apt-get -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-overwrite" -y install shadowsocks-go=${SHADOWSOCKS_GO_VERSION}
-		fi
+		apt-get -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-overwrite" -y install shadowsocks-go=${SHADOWSOCKS_GO_VERSION}
 	fi
 	if [ -f /etc/shadowsocks-go/server.json ]; then
 		PSK2=$(grep -Po '"'"psk"'"\s*:\s*"\K([^"]*)' /etc/shadowsocks-go/server.json | head -n 1 | tr -d "\n")
@@ -1416,12 +1400,7 @@ if [ "$V2RAY" = "yes" ]; then
 #			wget -O /lib/systemd/system/v2ray.service ${VPSURL}${VPSPATH}/v2ray.service
 #		fi
 	else
-		if [ -f "${DIR}/sources/v2ray-${V2RAY_VERSION}-amd64.deb" ]; then
-			echo "Using local v2ray deb"
-			dpkg --force-all -i -B "${DIR}/sources/v2ray-${V2RAY_VERSION}-amd64.deb"
-		else
-			apt-get -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-overwrite" -y install v2ray=${V2RAY_VERSION}
-		fi
+		apt-get -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-overwrite" -y install v2ray=${V2RAY_VERSION}
 	fi
 	if [ -f /etc/v2ray/v2ray-server.json ]; then
 		V2RAY_UUID2=$(grep -Po '"'"id"'"\s*:\s*"\K([^"]*)' /etc/v2ray/v2ray-server.json | head -n 1 | tr -d "\n")
@@ -1479,12 +1458,7 @@ if [ "$XRAY" = "yes" ]; then
 			rm -f /tmp/xray-${XRAY_VERSION}-arm64.deb
 		fi
 	else
-		if [ -f "${DIR}/sources/xray-${XRAY_VERSION}-amd64.deb" ]; then
-			echo "Using local xray deb"
-			dpkg --force-all -i -B "${DIR}/sources/xray-${XRAY_VERSION}-amd64.deb"
-		else
-			apt-get -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-overwrite" -y --allow-downgrades install xray=${XRAY_VERSION}
-		fi
+		apt-get -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-overwrite" -y --allow-downgrades install xray=${XRAY_VERSION}
 	fi
 	if [ -f /etc/xray/xray-server.json ]; then
 		XRAY_UUID2=$(grep -Po '"'"id"'"\s*:\s*"\K([^"]*)' /etc/xray/xray-server.json | head -n 1 | tr -d "\n")
@@ -1592,7 +1566,6 @@ if [ "$MLVPN" = "yes" ]; then
 		#git clone https://hub.55860.com/markfoodyburton/MLVPN.git /tmp/mlvpn
 		#git clone https://hub.55860.com/flohoff/MLVPN.git /tmp/mlvpn
 		if [ -f "${DIR}/sources/MLVPN.tar.gz" ]; then
-			echo "Using local MLVPN source"
 			tar xzf "${DIR}/sources/MLVPN.tar.gz" -C /tmp
 			mv /tmp/prep-MLVPN /tmp/mlvpn
 		else
@@ -1658,7 +1631,6 @@ if [ "$UBOND" = "yes" ]; then
 		rm -rf /tmp/ubond
 		cd /tmp
 		if [ -f "${DIR}/sources/ubond.tar.gz" ]; then
-			echo "Using local ubond source"
 			tar xzf "${DIR}/sources/ubond.tar.gz" -C /tmp
 			mv /tmp/prep-ubond /tmp/ubond
 		else
@@ -1799,11 +1771,10 @@ if [ "$OPENVPN" = "yes" ]; then
 		if [ -f "${DIR}/sources/EasyRSA-unix-v${EASYRSA_VERSION}.tgz" ]; then
 			cp "${DIR}/sources/EasyRSA-unix-v${EASYRSA_VERSION}.tgz" /tmp/EasyRSA-unix-v${EASYRSA_VERSION}.tgz
 		else
-			wget -O /tmp/EasyRSA-unix-v${EASYRSA_VERSION}.tgz https://hub.55860.com/OpenVPN/easy-rsa/releases/download/v${EASYRSA_VERSION}/EasyRSA-${EASYRSA_VERSION}.tgz
+			wget -O /tmp/EasyRSA-unix-v${EASYRSA_VERSION}.tgz https://hub.55860.com/OpenVPN/easy-rsa/releases/download/v${EASYRSA_VERSION}/EasyRSA-unix-v${EASYRSA_VERSION}.tgz
 		fi
 		cd /tmp
 		tar xzvf EasyRSA-unix-v${EASYRSA_VERSION}.tgz
-		[ -d /tmp/EasyRSA-v${EASYRSA_VERSION} ] || [ -d /tmp/EasyRSA-${EASYRSA_VERSION} ] && mv /tmp/EasyRSA-${EASYRSA_VERSION} /tmp/EasyRSA-v${EASYRSA_VERSION} 2>/dev/null
 		cd /tmp/EasyRSA-v${EASYRSA_VERSION}
 		mkdir -p /etc/openvpn/ca
 		cp easyrsa /etc/openvpn/ca/
@@ -1956,7 +1927,6 @@ if [ "$GLORYTUN_UDP" = "yes" ]; then
 		rm -rf /tmp/glorytun-udp
 		cd /tmp
 		if [ -f "${DIR}/sources/glorytun-udp.tar.gz" ]; then
-			echo "Using local glorytun-udp source"
 			tar xzf "${DIR}/sources/glorytun-udp.tar.gz" -C /tmp
 			mv /tmp/prep-glorytun-udp /tmp/glorytun-udp
 		else
@@ -2031,7 +2001,6 @@ if [ "$DSVPN" = "yes" ]; then
 		rm -rf /tmp/dsvpn
 		cd /tmp
 		if [ -f "${DIR}/sources/dsvpn.tar.gz" ]; then
-			echo "Using local dsvpn source"
 			tar xzf "${DIR}/sources/dsvpn.tar.gz" -C /tmp
 			mv /tmp/prep-dsvpn /tmp/dsvpn
 		else
@@ -2107,7 +2076,6 @@ if [ "$GLORYTUN_TCP" = "yes" ]; then
 			#	mv /tmp/glorytun-tcp /tmp/glorytun-0.0.35
 			#fi
 			if [ -f "${DIR}/sources/glorytun-tcp.tar.gz" ]; then
-				echo "Using local glorytun-tcp source"
 				tar xzf "${DIR}/sources/glorytun-tcp.tar.gz" -C /tmp
 				mv /tmp/prep-glorytun-tcp /tmp/glorytun-0.0.35
 			else
@@ -2130,8 +2098,8 @@ if [ "$GLORYTUN_TCP" = "yes" ]; then
 		if [ "$ID" = "debian" ] && [ "$VERSION_ID" = "13" ]; then
 			echo "Patch Glorytun TCP"
 			if [ -f "${DIR}/sources/001-fix-compilation-errors-gcc14.patch" ]; then
-				cp "${DIR}/sources/001-fix-compilation-errors-gcc14.patch" /tmp/glorytun-0.0.35/
-				cp "${DIR}/sources/002-fix-crypto-aead-pointer-types.patch" /tmp/glorytun-0.0.35/
+				cp "${DIR}/sources/001-fix-compilation-errors-gcc14.patch" .
+				cp "${DIR}/sources/002-fix-crypto-aead-pointer-types.patch" .
 			else
 				wget https://hub.55860.com/Ysurac/openmptcprouter-feeds/raw/refs/heads/develop/glorytun/patches/001-fix-compilation-errors-gcc14.patch
 				wget https://hub.55860.com/Ysurac/openmptcprouter-feeds/raw/refs/heads/develop/glorytun/patches/002-fix-crypto-aead-pointer-types.patch
@@ -2406,8 +2374,8 @@ fi
 sed -i 's/#SystemMaxUse=/SystemMaxUse=100M/' /etc/systemd/journald.conf
 
 if [ "$BPFTUNE" = "yes" ]; then
-	apt-get -y install bpftune || true
-	systemctl enable bpftune 2>/dev/null || true
+	apt-get -y install bpftune
+	systemctl enable bpftune
 fi
 
 if [ "$TLS" = "yes" ]; then
